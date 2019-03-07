@@ -1,0 +1,12 @@
+[flake8]
+exclude =
+    .git,__pycache__
+select =
+  E,   # pep8 errors
+  F,   # PyFlakes errors
+  W,   # pep8 warnings
+  N,   # pep8 naming errors
+  I,   # isort
+ignore =
+  W503,  # line break before binary operator
+  W504,  # line break after binary operator
