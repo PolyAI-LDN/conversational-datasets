@@ -13,9 +13,8 @@ import uuid
 from collections import defaultdict, namedtuple
 from functools import partial
 
-import tensorflow as tf
-
 import apache_beam as beam
+import tensorflow as tf
 from apache_beam import pvalue
 from apache_beam.io import BigQuerySource, Read
 from apache_beam.io.tfrecordio import WriteToTFRecord
@@ -231,7 +230,7 @@ class _TrainTestSplitFn(beam.DoFn):
     TRAIN_TAG = "train"
     TEST_TAG = "test"
 
-    def __init__(self, train_split=0.9, num_buckets=4096):
+    def __init__(self, train_split, num_buckets=4096):
         super(_TrainTestSplitFn, self).__init__()
         self._train_split = train_split
         self._num_buckets = num_buckets

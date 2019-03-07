@@ -1,6 +1,6 @@
 # Python CircleCI 2.0 configuration file
 #
-# Check https://circleci.com/docs/2.0/language-python/ for more details
+# See https://circleci.com/docs/2.0/language-python/
 version: 2
 workflows:
   version: 2
@@ -37,7 +37,7 @@ jobs:
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python2.7/site-packages
       - restore_cache:
-          key: deps-0-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          key: deps-1-{{ .Branch }}-{{ checksum "requirements.txt" }}
       - run:
           name: install deps
           command: |
@@ -47,8 +47,7 @@ jobs:
           command: |
             python -m unittest discover -p '*_test.py' .
       - save_cache:
-          key: deps-0-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          key: deps-1-{{ .Branch }}-{{ checksum "requirements.txt" }}
           paths:
-            - ".venv"
             - "/usr/local/bin"
-            - "/usr/local/lib/python3.6/site-packages"
+            - "/usr/local/lib/python2.7/site-packages"
