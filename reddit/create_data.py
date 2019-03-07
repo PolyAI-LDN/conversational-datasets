@@ -13,9 +13,8 @@ import uuid
 from collections import defaultdict, namedtuple
 from functools import partial
 
-import tensorflow as tf
-
 import apache_beam as beam
+import tensorflow as tf
 from apache_beam import pvalue
 from apache_beam.io import BigQuerySource, Read
 from apache_beam.io.tfrecordio import WriteToTFRecord
