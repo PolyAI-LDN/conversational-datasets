@@ -1,0 +1,54 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+version: 2
+workflows:
+  version: 2
+  lint_test:
+    jobs:
+      - lint
+      - test:
+          requires:
+            - lint
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/python:2.7.15
+    steps:
+      - checkout
+      - run:
+          name: install linter deps
+          command: sudo pip install flake8==3.7.6 isort==4.3.4 pep8-naming==0.5.0
+      - run:
+          name: python isort
+          command: isort -c --diff
+          when: always
+      - run:
+          name: python flake8
+          command: flake8
+          when: always
+
+  test:
+    docker:
+      - image: circleci/python:2.7.15
+    steps:
+      - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python2.7/site-packages
+      - restore_cache:
+          key: deps-0-{{ .Branch }}-{{ checksum "requirements.txt" }}
+      - run:
+          name: install deps
+          command: |
+            sudo pip install -r requirements.txt
+      - run:
+          name: python unit tests
+          command: |
+            python -m unittest discover -p '*_test.py' .
+      - save_cache:
+          key: deps-0-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          paths:
+            - ".venv"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.6/site-packages"
