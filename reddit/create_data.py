@@ -230,7 +230,7 @@ class _TrainTestSplitFn(beam.DoFn):
     TRAIN_TAG = "train"
     TEST_TAG = "test"
 
-    def __init__(self, train_split=0.9, num_buckets=4096):
+    def __init__(self, train_split, num_buckets=4096):
         super(_TrainTestSplitFn, self).__init__()
         self._train_split = train_split
         self._num_buckets = num_buckets
