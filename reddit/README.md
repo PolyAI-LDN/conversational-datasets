@@ -109,7 +109,7 @@ Once the above is running, you can continue to monitor it in the terminal, or qu
 The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit_YYYYMMDD/train-*-of-01000.tfrecords` and
 `gs://your-bucket/reddit_YYYYMMDD/test-*-of-01000.tfrecords`.
 
-You can then use [`tools/tfrutil.py`](tools/tfrutil.py) to inspect the files. For example:
+You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
 ```
 python tools/tfrutil.py pp gs://your-bucket/reddit_YYYYMMDD/train-00999-of-01000.tfrecords
