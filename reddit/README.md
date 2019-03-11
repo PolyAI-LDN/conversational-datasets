@@ -6,6 +6,27 @@ Each reddit thread is used to generate a set of examples. Each response comment 
 
 Further back contexts, from the comment's parent's parent etc., are stored as extra context features. Their texts are trimmed to be at most 128 characters in length, without splitting apart words. This helps to bound the size of an individual example.
 
+The train / test split is deterministic based on the thread ID. As long as all the input to the script is held constant (the input tables, filtering thresholds etc.), the resulting datasets should be identical.
+
+
+## Statistics
+
+Below are some statistics of the dataset generated using the comments from
+January 2016 to June 2018:
+
+
+* Number of comments: 2,345,492,566
+* Number of threads: 163,848,991
+* Number of tensorflow examples: 462,796,822
+* Train set size: 416,606,697
+* Test set size: 46,190,125
+
+Typical metrics for the Dataflow job:
+
+* Total vCPU time:  412.511 vCPU hr
+* Total memory time: 1,547.109 GB hr
+* Total persistent disk time: 103,140.598 GB hr
+* Elapsed time: 1h 4m (409 workers)
 
 ## Create the BigQuery input table
 
