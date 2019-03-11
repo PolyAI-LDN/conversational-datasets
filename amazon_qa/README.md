@@ -70,5 +70,28 @@ python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00010.tfrecords
 (It may be faster to copy the tfrecord file locally first.) This will print examples like:
 
 ```
+Example 0
+--------
+[Context]:
+        can I use this filter in Australian 220V power?
+[Response]:
+        No it is a 110 unit you would have to purchase a 110 converter elseware to use this
 
+Other features:
+        [product_id]:
+                B002WJ34IC
+--------
+
+
+Example 1
+--------
+[Context]:
+        can 11 year olds ride it
+[Response]:
+        this car is too small for 11 year olds, I would prefer age between 4 - 6 for this car.
+
+Other features:
+        [product_id]:
+                B00E0GWJY0
+--------
 ```
