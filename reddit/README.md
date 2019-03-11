@@ -28,6 +28,10 @@ Typical metrics for the Dataflow job:
 * Total persistent disk time: 103,140.598 GB hr
 * Elapsed time: 1h 4m (409 workers)
 
+# Create the conversational dataset
+
+Below are instructions for how to generate the reddit dataset.
+
 ## Create the BigQuery input table
 
 Reddit comment data is stored as a public BigQuery dataset, partitioned into months: [`fh-bigquery:reddit_comments.YYYY_MM`](https://console.cloud.google.com/bigquery?p=fh-bigquery&d=reddit_comments&page=dataset). The first step in creating the dataset is to create a single table that contains all the comment data to include.
@@ -104,3 +108,36 @@ Once the above is running, you can continue to monitor it in the terminal, or qu
 
 The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit_YYYYMMDD/train-*-of-01000.tfrecords` and
 `gs://your-bucket/reddit_YYYYMMDD/test-*-of-01000.tfrecords`.
+
+You can then use [`tools/tfrutil.py`](tools/tfrutil.py) to inspect the files. For example:
+
+```
+python tools/tfrutil.py pp gs://your-bucket/reddit_YYYYMMDD/train-00999-of-01000.tfrecords
+```
+
+(It may be faster to copy the tfrecord file locally first.) This will print examples like:
+
+```
+[Context]:
+	"Learning to learn", using deep learning to design the architecture of another deep network: https://arxiv.org/abs/1606.04474
+[Response]:
+	using deep learning with SGD to design the learning algorithms of another deep network   *
+
+Extra Contexts:
+	[context/2]:
+		Could someone there post a summary of the insightful moments.
+	[context/1]:
+		Basically L2L is the new deep learning.
+	[context/0]:
+		What's "L2L" mean?
+
+Other features:
+	[context_author]:
+		goodside
+	[response_author]:
+		NetOrBrain
+	[subreddit]:
+		MachineLearning
+	[thread_id]:
+		5h6yvl
+```

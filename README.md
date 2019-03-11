@@ -4,10 +4,24 @@
 Datasets for conversational AI
 
 
-##
+## Conversational Dataset Format
+
+
+## Getting Started
 
 ```
 python2.7 -m virtualenv venv
 . venv/bin/activate
 pip install -r requirements.txt
 ```
+
+
+## Datasets
+
+### Reddit
+
+## Evaluation
+
+## Citations
+
+## Contributing
