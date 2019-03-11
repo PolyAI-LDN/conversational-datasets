@@ -239,7 +239,7 @@ class _TrainTestSplitFn(beam.DoFn):
         example = tf.train.Example()
         example.ParseFromString(serialized_example)
 
-        thread_id, = example.features.feature["thread_id"].bytes_list.value
+        thread_id, = example.features.feature['thread_id'].bytes_list.value
         split_value = self._split_value(thread_id)
 
         split = (
