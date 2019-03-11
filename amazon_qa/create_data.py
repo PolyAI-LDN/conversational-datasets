@@ -187,7 +187,7 @@ def _main():
 
     # Create the examples.
     serialized_examples = qa_tuples | "create examples" >> beam.Map(
-        partial(_create_example)
+        lambda args: _create_example(*args)
     )
     serialized_examples = _shuffle_examples(serialized_examples)
 

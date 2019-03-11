@@ -4,7 +4,7 @@
 
 # conversational-datasets
 
-
+why scripts? deterministic train/test split.
 
 
 ## Conversational Dataset Format
