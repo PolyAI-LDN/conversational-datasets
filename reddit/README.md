@@ -1,39 +1,85 @@
-## Create reddit examples
+# Reddit data
 
-Download a key for a service account with access to Dataflow,
-and set `GOOGLE_APPLICATION_CREDENTIALS`:
+[Reddit](https://www.reddit.com/) is an American social news aggregation website, where users can post links, and take part in discussions on these posts. These threaded discussions provide a large corpus, which is converted into a conversational dataset using the tools in this directory.
+
+Each reddit thread is used to generate a set of examples. Each response comment generates an example, where the context is the linear path of comments that the comment is in response to. If the comment or its direct parent has more than 128 characters, or fewer than 9 characters, then the example is filtered out.
+
+Further back contexts, from the comment's parent's parent etc., are stored as extra context features. Their texts are trimmed to be at most 128 characters in length, without splitting apart words. This helps to bound the size of an individual example.
+
+
+## Create the BigQuery input table
+
+Reddit comment data is stored as a public BigQuery dataset, partitioned into months: [`fh-bigquery:reddit_comments.YYYY_MM`](https://console.cloud.google.com/bigquery?p=fh-bigquery&d=reddit_comments&page=dataset). The first step in creating the dataset is to create a single table that contains all the comment data to include.
+
+First, [install the bq command-line tool](https://cloud.google.com/bigquery/docs/bq-command-line-tool).
+
+Ensure you have a BigQuery dataset to write the table to:
 
 ```
-export GOOGLE_APPLICATION_CREDENTIALS={{key location}}
+DATASET="data"
+bq mk --dataset ${DATASET?}
 ```
 
-Run the Dataflow script.
+Write a new table by querying the public reddit data:
 
 ```
-PROJECT="ABCDE"
+TABLE=reddit
+
+# For all data from January 2016 to June 2018.
+TABLE_REGEX="^(201[678]_[01][0-9]|2018_0[1-6])$"
+
+# For all data up to 2019.
+TABLE_REGEX="^201[5678]_[01][0-9]$"
+
+QUERY="SELECT * \
+  FROM TABLE_QUERY(\
+  [fh-bigquery:reddit_comments], \
+  \"REGEXP_MATCH(table_id, '${TABLE_REGEX?}')\" )"
+
+# Run the query.
+echo "${QUERY?}" | bq query \
+  --n 0 \
+  --batch --allow_large_results \
+  --destination_table ${DATASET?}.${TABLE?} \
+  --use_legacy_sql=true
+```
+
+
+## Create the conversational dataset
+
+[`create_data.py`](create_data.py) is a [Google Dataflow](https://cloud.google.com/dataflow/) script that reads the input BigQuery table and saves the dataset to Google Cloud Storage.
+
+[Create a bucket](https://cloud.google.com/storage/docs/creating-buckets) to save the dataset to.
+
+[Set up authentication](
+https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
+
+```
+export GOOGLE_APPLICATION_CREDENTIALS={{json file key location}}
+```
+
+Now you can run the Dataflow script:
+
+```
+PROJECT="your-google-cloud-project"
 BUCKET="your-bucket"
 
-DATADIR="gs://${BUCKET}/reddit_$(date +"%Y%m%d")"
+DATADIR="gs://${BUCKET?}/reddit_$(date +"%Y%m%d")"
 
-# For testing with 10k comments:
-TABLE=data.reddit
-
+# The below uses values of $DATASET and $TABLE set
+# in the previous section.
 
 python data/reddit/create_data.py \
   --output_dir ${DATADIR?} \
-  --reddit_table ${PROJECT?}:${TABLE?} \
+  --reddit_table ${PROJECT?}:${DATASET?}.${TABLE?} \
   --runner DataflowRunner \
-  --temp_location ${DATADIR}/temp \
+  --temp_location ${DATADIR?}/temp \
   --staging_location ${DATADIR?}/staging \
   --project ${PROJECT?}
 ```
 
-View the running job on the
+Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
-View the final output with:
-
-```
-python tools/read_records.py -- \
-  --tfrecords_file ${DATADIR?}/test-00000-of-00100.tfrecords | less
-```
+The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit_YYYYMMDD/train-*-of-01000.tfrecords` and
+`gs://your-bucket/reddit_YYYYMMDD/test-*-of-01000.tfrecords`.
