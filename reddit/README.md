@@ -89,7 +89,7 @@ Now you can run the Dataflow script:
 PROJECT="your-google-cloud-project"
 BUCKET="your-bucket"
 
-DATADIR="gs://${BUCKET?}/reddit_$(date +"%Y%m%d")"
+DATADIR="gs://${BUCKET?}/reddit/$(date +"%Y%m%d")"
 
 # The below uses values of $DATASET and $TABLE set
 # in the previous section.
@@ -106,13 +106,13 @@ python data/reddit/create_data.py \
 Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
-The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit_YYYYMMDD/train-*-of-01000.tfrecords` and
-`gs://your-bucket/reddit_YYYYMMDD/test-*-of-01000.tfrecords`.
+The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit/YYYYMMDD/train-*-of-01000.tfrecords` and
+`gs://your-bucket/reddit/YYYYMMDD/test-*-of-01000.tfrecords`.
 
 You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
 ```
-python tools/tfrutil.py pp gs://your-bucket/reddit_YYYYMMDD/train-00999-of-01000.tfrecords
+python tools/tfrutil.py pp ${DATADIR?}/train-00999-of-01000.tfrecords
 ```
 
 (It may be faster to copy the tfrecord file locally first.) This will print examples like:
