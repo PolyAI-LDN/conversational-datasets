@@ -12,7 +12,10 @@ from opensubtitles import create_data
 
 _TRAIN_FILE = """
 matt: AAAA
+[skip]
 BBBB
+
+
 CCCC
 DDDD [boom!]
 123

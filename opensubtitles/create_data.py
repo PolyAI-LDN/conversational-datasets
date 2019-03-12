@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import uuid
+from functools import partial
 from os import path
 
 import apache_beam as beam
@@ -120,49 +121,33 @@ def _preprocess_line(line):
     return line
 
 
-class _CreateExampleFn(beam.DoFn):
-    """ Creates tf.examples from a text file of movie subtitles"""
-    def __init__(self, min_length, max_length, num_extra_contexts):
-        """constructor
+def _create_examples_from_file(file_name, min_length, max_length,
+                               num_extra_contexts):
+    _, file_id = path.split(file_name)
+    previous_lines = []
+    for line in FileSystems.open(file_name, "application/octet-stream"):
+        line = _preprocess_line(line)
+        if not line:
+            continue
 
-        Args:
-            min_length: The minimum line length in chars to be included as
-                an example
-            max_length: The maximum line length in chars to be included as
-                an example
-            num_extra_contexts: The number of extra contexts (lines) to be
-                included in each example
-        """
-        self._min_length = min_length
-        self._max_length = max_length
-        self._num_extra_contexts = num_extra_contexts
+        should_skip = _should_skip(
+            line,
+            min_length=min_length,
+            max_length=max_length)
 
-    def process(self, file_name):
-        _, file_id = path.split(file_name)
-        previous_lines = []
-        for line in FileSystems.open(file_name, "application/octet-stream"):
-            line = _preprocess_line(line)
-            if not line:
-                continue
+        if previous_lines:
+            should_skip |= _should_skip(
+                previous_lines[-1],
+                min_length=min_length,
+                max_length=max_length)
 
-            should_skip = _should_skip(
-                line,
-                min_length=self._min_length,
-                max_length=self._max_length)
+            if not should_skip:
+                example = create_example(previous_lines, line, file_id)
+                yield example.SerializeToString()
 
-            if previous_lines:
-                should_skip |= _should_skip(
-                    previous_lines[-1],
-                    min_length=self._min_length,
-                    max_length=self._max_length)
-
-                if not should_skip:
-                    example = create_example(previous_lines, line, file_id)
-                    yield example.SerializeToString()
-
-            previous_lines.append(line)
-            if len(previous_lines) > self._num_extra_contexts + 1:
-                del previous_lines[0]
+        previous_lines.append(line)
+        if len(previous_lines) > num_extra_contexts + 1:
+            del previous_lines[0]
 
 
 def _shuffle_examples(examples):
@@ -227,10 +212,12 @@ def run(argv=None):
                  len(sentence_files), args.sentence_files)
     assert len(sentence_files) > 0
     sentence_files = p | beam.Create(sentence_files)
-    serialized_examples = sentence_files | "create examples" >> beam.ParDo(
-        _CreateExampleFn(min_length=args.min_length,
-                         max_length=args.max_length,
-                         num_extra_contexts=args.num_extra_contexts))
+    serialized_examples = sentence_files | "create examples" >> beam.FlatMap(
+        partial(_create_examples_from_file,
+                min_length=args.min_length,
+                max_length=args.max_length,
+                num_extra_contexts=args.num_extra_contexts)
+    )
 
     serialized_examples = _shuffle_examples(serialized_examples)
 
