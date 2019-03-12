@@ -32,23 +32,22 @@ Typical metrics for the Dataflow job:
 
 ### Up to 2019
 
-
 Below are some statistics of the dataset generated using the comments from
 up to 2019 (`TABLE_REGEX="^201[5678]_[01][0-9]$")`):
 
 
-* Number of comments: ???
-* Number of threads: ???
-* Number of tensorflow examples: ???
-* Train set size: ???
-* Test set size: ???
+* Number of comments: 3,680,746,776
+* Number of threads: 256,095,216
+* Number of tensorflow examples: 727,013,715
+* Train set size: 654,396,778
+* Test set size: 72,616,937
 
 Typical metrics for the Dataflow job:
 
-* Total vCPU time:  ??? vCPU hr
-* Total memory time: ??? GB hr
-* Total persistent disk time: ??? GB hr
-* Elapsed time: ?h ?m (??? workers)
+* Total vCPU time:  625.507 vCPU hr
+* Total memory time: 322.5 GB hr
+* Total persistent disk time: 156,376.805 GB hr
+* Elapsed time: 1h 38m 409 workers)
 
 # Create the conversational dataset
 

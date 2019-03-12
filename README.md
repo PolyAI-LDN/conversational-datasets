@@ -4,8 +4,21 @@
 
 # conversational-datasets
 
-why scripts? deterministic train/test split.
+*A collection of large datasets for conversational response selection.*
 
+This repository provides tools to create reproducible datasets for training and evaluating models of conversational response. This includes:
+
+* [Reddit](reddit) - 3.7 billion comments structured in threaded conversations
+* [OpenSubtitles](opensubtitles) - over 400 million lines from movie and television subtitles. Also available in other languages
+* [Amazon QA](amazon_qa) - almost 4 million question response pairs in the context of Amazon products
+
+Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets, and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
+
+Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets that can be used to define reproducible evaluations in research papers.
+
+## Benchmarks
+
+Benchmark results for each of the datasets can be found in [`BENCHMARKS.md`](BENCHMARKS.md).
 
 ## Conversational Dataset Format
 
@@ -16,6 +29,8 @@ any dataset in this format is referred to elsewhere as simply a
 Datasets are stored as [tensorflow record files](`https://www.tensorflow.org/tutorials/load_data/tf_records`) containing serialized [tensorflow example](https://www.tensorflow.org/tutorials/load_data/tf_records#data_types_for_tfexample) protocol buffers.
 The training set is stored as one collection of tensorflow record files, and
 the test set as another.
+
+The train/test split is always deterministic, so that whenever the dataset is generated, the same train/test split is created.
 
 Each tensorflow example contains a conversational context, and a response that goes with the context. For example:
 
@@ -119,19 +134,59 @@ This should be enough to follow the instructions for creating each individual da
 
 ## Evaluation
 
-We rely on a standard IR evaluation measure used in prior work on retrieval-based dialogue \cite{Lowe:2017dd,Zhou:2018acl,Chaudhuri:2018conll}: \textit{Recall@k}. Given a set of $N$ responses to the given input/query, where only one response is relevant, it indicates whether the relevant response occurs in the top $k$ ranked candidate responses. We refer to this evaluation measure as $\mathbf{R}_{N}@k$, and set $N=100; k=1$: $\mathbf{R}_{100}@1$. This effectively means that for each query, we indicate if the correct response is the top ranked response between 100 candidates. The final score is the average across all queries.
+Of course you may evaluate your models in any way you like.
+However when publishing results, we encourage you to include the
+1-of-100 ranking accuracy, which is becoming a research community standard.
 
-following also:
+The 1-of-100 ranking accuracy is a *Recall@k* metric. In general *Recall@k*
+takes *N* responses to the given conversational context, where only one response is relevant, it indicates whether the relevant response occurs in the top *k* ranked candidate responses.
+The 1-of-100 metric is obtained when *k=1* and *N=100*.
+This effectively means that for each query, we indicate if the correct response is the top ranked response among 100 candidates. The final score is the average across all queries.
 
-Matthew Henderson, Rami Al-Rfou, Brian Strope, Yun-Hsuan Sung, László Lukács, Ruiqi Guo, Sanjiv Ku-mar, Balint Miklos, and Ray Kurzweil. 2017.  Effi-cient natural language response suggestion for smartreply.CoRR, abs/1705.00652
+The 1-of-100 metric is computed using random batches of 100 examples, so that the responses from other examples in the batch are used as random negative candidates. This allows for efficiently computing the metric across many examples in batches. While it is not guaranteed that the random negatives will indeed be 'true' negatives, it still provides a useful evaluation signal that correlates with downstream tasks.
 
-using reddit:
+The following tensorflow code shows how this metric can be computed for a dot-product style encoder model, where the score for each context and response is a dot product between corresponding vectors:
 
-Daniel  Cer,  Yinfei  Yang,  Sheng-yi  Kong,  Nan  Hua,Nicole Limtiaco, Rhomni St. John, Noah Constant,Mario  Guajardo-Cespedes,  Steve  Yuan,  Chris  Tar,Yun-Hsuan Sung, Brian Strope, and Ray Kurzweil.2018.Universal   sentence   encoder.CoRR,abs/1803.11175.
+```python
+# Encode the contexts and responses as vectors using tensorflow ops.
+# The following are both [100, encoding_size] matrices.
+context_encodings = _encode_contexts(tensor_dict['context'])
+response_encodings = _encode_responses(tensor_dict['response'])
 
-Rami  Al-Rfou,  Marc  Pickett,  Javier  Snaider,  Yun-Hsuan Sung, Brian Strope, and Ray Kurzweil. 2016.Conversational contextual cues: The case of person-alization  and  history  for  response  ranking.CoRR,abs/1606.00372
+scores = tf.matmul(
+  context_encodings, response_encodings,
+  transpose_b=True)  # A [100, 100] matrix.
 
-Yinfei Yang, Steve Yuan, Daniel Cer, Sheng-Yi Kong,Noah Constant, Petr Pilar, Heming Ge, Yun-hsuanSung, Brian Strope, and Ray Kurzweil. 2018. Learn-ing  semantic  textual  similarity  from  conversations.InProceedings of The 3rd Workshop on Representa-tion Learning for NLP, pages 164–174
+batch_size = tf.shape(context_encodings)[0]
+
+accuracy_1_of_100 = tf.metrics.accuracy(
+  labels=tf.range(batch_size),
+  predictions=tf.argmax(scores, 1)
+)
+```
+
+See also the [baselines](baselines) for example code computing the 1-of-100 metric.
+
+The following papers use *Recall@k* in the context of retrieval-based dialogue:
+
+* [*Training End-to-End Dialogue Systems with the Ubuntu Dialogue Corpus*](http://dad.uni-bielefeld.de/index.php/dad/article/view/3698), Lowe et al. Dialogue and Discourse 2017.
+
+* [*Multi-Turn Response Selection for Chatbots with Deep Attention Matching Network*](http://aclweb.org/anthology/P18-1103), Zhou et al. ACL 2018.
+
+* [*Improving Response Selection in Multi-turn Dialogue Systems by Incorporating Domain Knowledge*](http://aclweb.org/anthology/K18-1048),
+Chaudhuri et al. CoNLL 2018.
+
+The following papers use the 1-of-100 ranking accuracy in particular:
+
+* [*Conversational Contextual Cues: The Case of Personalization  and History  for  Response  Ranking.*](http://arxiv.org/abs/1606.00372), Al-Rfou et al. arXiv pre-print 2016.
+
+* [*Efficient Natural Language Response Suggestion for Smart Reply*](http://arxiv.org/abs/1705.00652), Henderson et al. arXiv pre-print 2017.
+
+* [*Universal Sentence Encoder*](https://arxiv.org/abs/1803.11175), Cer et al. arXiv pre-print 2018.
+
+* [*Learning  Semantic  Textual  Similarity  from  Conversations.*](http://aclweb.org/anthology/W18-3022). Yang et al. Workshop on Representation Learning for NLP 2018.
+
+
 
 ## Citations
 
