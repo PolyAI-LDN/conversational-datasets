@@ -74,14 +74,6 @@ echo "${QUERY?}" | bq query \
 
 [`create_data.py`](create_data.py) is a [Google Dataflow](https://cloud.google.com/dataflow/) script that reads the input BigQuery table and saves the dataset to Google Cloud Storage.
 
-[Create a bucket](https://cloud.google.com/storage/docs/creating-buckets) to save the dataset to.
-
-[Set up authentication](
-https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
-
-```
-export GOOGLE_APPLICATION_CREDENTIALS={{json file key location}}
-```
 
 Now you can run the Dataflow script:
 
@@ -105,6 +97,8 @@ python data/reddit/create_data.py \
 
 Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
+
+Please confirm that the statistics reported on the dataflow job page agree with the statistics reported above, to ensure you have a correct version of the dataset.
 
 The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit/YYYYMMDD/train-*-of-01000.tfrecords` and
 `gs://your-bucket/reddit/YYYYMMDD/test-*-of-00100.tfrecords`.

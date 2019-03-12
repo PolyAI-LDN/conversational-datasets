@@ -61,10 +61,22 @@ python2.7 -m virtualenv venv
 pip install -r requirements.txt
 ```
 
+[Create a bucket](https://cloud.google.com/storage/docs/creating-buckets) to save the dataset to.
+
+[Set up authentication](
+https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
+
+```
+export GOOGLE_APPLICATION_CREDENTIALS={{json file key location}}
+```
 
 ## Datasets
 
 ### Reddit
+
+### OpenSubtitles
+
+### Amazon QA
 
 ## Evaluation
 

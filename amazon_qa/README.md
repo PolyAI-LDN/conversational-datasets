@@ -65,6 +65,8 @@ python amazon_qa/create_data.py \
 Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
+Please confirm that the statistics reported on the dataflow job page agree with the statistics reported above, to ensure you have a correct version of the dataset.
+
 The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/amazon_qa/YYYYMMDD/train-*-of-00100.tfrecords` and
 `gs://your-bucket/amazon_qa/YYYYMMDD/test-*-of-00010.tfrecords`.
 
