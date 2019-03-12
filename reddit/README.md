@@ -11,8 +11,10 @@ The train / test split is deterministic based on the thread ID. As long as all t
 
 ## Statistics
 
+### January 2016 to June 2018
+
 Below are some statistics of the dataset generated using the comments from
-January 2016 to June 2018:
+January 2016 to June 2018 (`TABLE_REGEX="^(201[678]_[01][0-9]|2018_0[1-6])$"`):
 
 
 * Number of comments: 2,345,492,566
@@ -27,6 +29,25 @@ Typical metrics for the Dataflow job:
 * Total memory time: 1,547.109 GB hr
 * Total persistent disk time: 103,140.598 GB hr
 * Elapsed time: 1h 4m (409 workers)
+
+### Up to 2019
+
+Below are some statistics of the dataset generated using the comments from
+up to 2019 (`TABLE_REGEX="^201[5678]_[01][0-9]$")`):
+
+
+* Number of comments: 3,680,746,776
+* Number of threads: 256,095,216
+* Number of tensorflow examples: 727,013,715
+* Train set size: 654,396,778
+* Test set size: 72,616,937
+
+Typical metrics for the Dataflow job:
+
+* Total vCPU time:  625.507 vCPU hr
+* Total memory time: 322.5 GB hr
+* Total persistent disk time: 156,376.805 GB hr
+* Elapsed time: 1h 38m 409 workers)
 
 # Create the conversational dataset
 
@@ -70,18 +91,10 @@ echo "${QUERY?}" | bq query \
 ```
 
 
-## Create the conversational dataset
+## Run the dataflow script
 
 [`create_data.py`](create_data.py) is a [Google Dataflow](https://cloud.google.com/dataflow/) script that reads the input BigQuery table and saves the dataset to Google Cloud Storage.
 
-[Create a bucket](https://cloud.google.com/storage/docs/creating-buckets) to save the dataset to.
-
-[Set up authentication](
-https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
-
-```
-export GOOGLE_APPLICATION_CREDENTIALS={{json file key location}}
-```
 
 Now you can run the Dataflow script:
 
@@ -94,7 +107,7 @@ DATADIR="gs://${BUCKET?}/reddit/$(date +"%Y%m%d")"
 # The below uses values of $DATASET and $TABLE set
 # in the previous section.
 
-python data/reddit/create_data.py \
+python reddit/create_data.py \
   --output_dir ${DATADIR?} \
   --reddit_table ${PROJECT?}:${DATASET?}.${TABLE?} \
   --runner DataflowRunner \
@@ -106,8 +119,10 @@ python data/reddit/create_data.py \
 Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
+Please confirm that the statistics reported on the dataflow job page agree with the statistics reported above, to ensure you have a correct version of the dataset.
+
 The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit/YYYYMMDD/train-*-of-01000.tfrecords` and
-`gs://your-bucket/reddit/YYYYMMDD/test-*-of-01000.tfrecords`.
+`gs://your-bucket/reddit/YYYYMMDD/test-*-of-00100.tfrecords`.
 
 You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 

@@ -1,9 +1,23 @@
 # OpenSubtitles Data
 
-A dataset contains examples of pairs of sentences that occur in sequence in the
-data.
+This dataset uses movie and television subtitles data from OpenSubtitles. The
+script in this directory uses the corpus collected by Lison and Tiedemann. See http://opus.nlpl.eu/OpenSubtitles-v2018.php and the following citation:
+
+*OpenSubtitles2016: Extracting Large Parallel Corpora from Movie and TV Subtitles.* P. Lison and J. Tiedemann.  In Proceedings of the 10th International Conference on Language Resources and Evaluation (LREC 2016)
+
+The data is available in 62 different languages.
+
+Consecutive lines in the subtitle data are used to create conversational examples.
+There is no guarantee that different lines correspond to different
+speakers, but the data nevertheless contains a lot of interesting examples
+for modelling the mapping from conversational contexts to responses.
+
+The script filters short and long lines, and strips some text such as
+character names and auditory description text.
 
 ## Statistics
+
+Below are statistics for the English dataset:
 
 * Input files: 4,415
 * Number of examples: 320,233,703
@@ -18,14 +32,23 @@ Typical metrics for the Dataflow job:
 * Elapsed time: 25m (225 workers)
 
 
-## Create a dataset
+# Create the conversational dataset
 
-Download monolingual raw text data,
+Below are instructions for creating the conversational dataset from the
+OpenSubtitles corpus.
 
-* English [en.txt.gz](http://opus.nlpl.eu/download.php?f=OpenSubtitles/v2018/mono/OpenSubtitles.raw.en.gz).
+## Download the OpenSubtitles data
 
+First, download monolingual raw text data for the target language.
 
-Extract and upload to GCS.
+Visit http://opus.nlpl.eu/OpenSubtitles-v2018.php, and find the *Statistics and TMX/Moses Downloads* table. Click on the language ID in the first column
+to get the monolingual plain text file (untokenized).
+
+For English the correct link is:
+
+http://opus.nlpl.eu/download.php?f=OpenSubtitles/v2018/mono/OpenSubtitles.raw.en.gz
+
+Extract the data, split it into shards, and upload the data to your Google cloud storage bucket:
 
 ```
 gunzip -k en.txt.gz
@@ -36,8 +59,13 @@ BUCKET="your-bucket"
 gsutil -m cp -r lines gs://${BUCKET?}/opensubtitles/raw/
 ```
 
+Note that the exact split command is important, as the train/test split is
+computed using the file names.
 
-Run the dataflow script:
+## Run the dataflow script
+
+Now you can run the dataflow script to read the text files and generate
+conversational examples:
 
 ```
 PROJECT="your-google-cloud-project"
@@ -53,11 +81,15 @@ python opensubtitles/create_data.py \
   --project ${PROJECT?}
 ```
 
-View the running job on the
+Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
+Please confirm that the statistics reported on the dataflow job page agree with the statistics reported above, to ensure you have a correct version of the dataset.
 
-View final output:
+The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/opensubtitles/YYYYMMDD/train-*-of-01000.tfrecords` and
+`gs://your-bucket/opensubtitles/YYYYMMDD/test-*-of-00100.tfrecords`.
+
+You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
 ```
 python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00100.tfrecords

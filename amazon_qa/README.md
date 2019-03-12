@@ -1,8 +1,16 @@
 # Amazon QA Data
 
+This dataset is based on a corpus extracted by McAuley et al., who scraped questions and answers from Amazon. The dataset is described at http://jmcauley.ucsd.edu/data/amazon/qa/ as well as in the following papers:
+
+*Modeling ambiguity, subjectivity, and diverging viewpoints in opinion question answering systems*. Mengting Wan, Julian McAuley. International Conference on Data Mining (ICDM), 2016. [pdf](http://cseweb.ucsd.edu/~jmcauley/pdfs/icdm16c.pdf)
+
+*Addressing complex and subjective product-related queries with customer reviews*. Julian McAuley, Alex Yang. World Wide Web (WWW), 2016. [pdf](http://cseweb.ucsd.edu/~jmcauley/pdfs/www16b.pdf)
+
+The script in this directory processes this corpus, filters long and short texts, and creates a conversational dataset.
 
 ## Statistics
 
+Below are some statistics of the conversational dataset:
 
 * Input files: 38
 * Number of QA dictionaries: 1,569,513
@@ -20,23 +28,26 @@ Typical metrics for the Dataflow job:
 
 # Create the conversational dataset
 
+Below are instructions for how to generate the Amazon QA conversational dataset.
 
 ## Downloading Amazon QA dataset
 
-Download from http://jmcauley.ucsd.edu/data/amazon/qa/.
+First you must download the input data from http://jmcauley.ucsd.edu/data/amazon/qa/. In total there are 38 `.json.gz` files to download. Unzip them all and copy them to your Google cloud storage bucket:
 
 ```
-cd amazon_qa
 gunzip *
 
 BUCKET="your-bucket"
-gsutil -m cp -r * gs://${BUCKET?}/amazon_qa
+gsutil -m cp -r * gs://${BUCKET?}/amazon_qa/raw/
 ```
 
-## Creating QA data
+Note that while the files are named `.json`, they are not actually valid
+JSON, but rather python dictionaries in string format.
 
+## Run the dataflow script
 
-Run the Dataflow script:
+Run the following command to process the raw input data into a conversational
+dataset:
 
 ```
 PROJECT="your-google-cloud-project"
@@ -44,18 +55,22 @@ PROJECT="your-google-cloud-project"
 DATADIR="gs://${BUCKET?}/amazon_qa/$(date +"%Y%m%d")"
 
 python amazon_qa/create_data.py \
-  --file_pattern gs://${BUCKET}/amazon_qa/raw/* \
+  --file_pattern gs://${BUCKET?}/amazon_qa/raw/* \
   --output_dir ${DATADIR} \
   --runner DataflowRunner --temp_location ${DATADIR}/temp \
   --staging_location ${DATADIR}/staging \
   --project ${PROJECT?}
 ```
 
-View the running job on the
+Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
+Please confirm that the statistics reported on the dataflow job page agree with the statistics reported above, to ensure you have a correct version of the dataset.
 
-View final output:
+The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/amazon_qa/YYYYMMDD/train-*-of-00100.tfrecords` and
+`gs://your-bucket/amazon_qa/YYYYMMDD/test-*-of-00010.tfrecords`.
+
+You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
 ```
 python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00010.tfrecords
