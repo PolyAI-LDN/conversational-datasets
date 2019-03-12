@@ -19,7 +19,7 @@ the test set as another.
 
 Each tensorflow example contains a conversational context, and a response that goes with the context. For example:
 
-```JSON
+```javascript
 {
   'context/1': "Hello, how are you?",
   'context/0': "I am fine. And you?",
