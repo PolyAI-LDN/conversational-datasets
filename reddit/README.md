@@ -70,7 +70,7 @@ echo "${QUERY?}" | bq query \
 ```
 
 
-## Create the conversational dataset
+## Run the dataflow script
 
 [`create_data.py`](create_data.py) is a [Google Dataflow](https://cloud.google.com/dataflow/) script that reads the input BigQuery table and saves the dataset to Google Cloud Storage.
 
@@ -107,7 +107,7 @@ Once the above is running, you can continue to monitor it in the terminal, or qu
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
 The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/reddit/YYYYMMDD/train-*-of-01000.tfrecords` and
-`gs://your-bucket/reddit/YYYYMMDD/test-*-of-01000.tfrecords`.
+`gs://your-bucket/reddit/YYYYMMDD/test-*-of-00100.tfrecords`.
 
 You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
