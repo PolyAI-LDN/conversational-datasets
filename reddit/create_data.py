@@ -124,7 +124,7 @@ def trim(text, max_length):
 
     # Trim until the last two characters are the boundary between an
     # alphanumeric character, and a non-alphanumeric character.
-    while text and (text[-1].isalnum() == text[-2].isalnum()):
+    while len(text) > 1 and (text[-1].isalnum() == text[-2].isalnum()):
         text = text[:-1]
 
     return text[:-1]

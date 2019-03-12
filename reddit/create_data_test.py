@@ -159,6 +159,12 @@ class CreateDataTest(unittest.TestCase):
             create_data.trim("Matthew", 9)
         )
 
+    def test_trim_long_word(self):
+        self.assertEqual(
+            "",
+            create_data.trim("Matthew", 2)
+        )
+
     def test_normalise_comment(self):
         comment = create_data.normalise_comment(
             {

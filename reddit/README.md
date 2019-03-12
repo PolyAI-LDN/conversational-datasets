@@ -11,8 +11,10 @@ The train / test split is deterministic based on the thread ID. As long as all t
 
 ## Statistics
 
+### January 2016 to June 2018
+
 Below are some statistics of the dataset generated using the comments from
-January 2016 to June 2018:
+January 2016 to June 2018 (`TABLE_REGEX="^(201[678]_[01][0-9]|2018_0[1-6])$"`):
 
 
 * Number of comments: 2,345,492,566
@@ -27,6 +29,26 @@ Typical metrics for the Dataflow job:
 * Total memory time: 1,547.109 GB hr
 * Total persistent disk time: 103,140.598 GB hr
 * Elapsed time: 1h 4m (409 workers)
+
+### Up to 2019
+
+
+Below are some statistics of the dataset generated using the comments from
+up to 2019 (`TABLE_REGEX="^201[5678]_[01][0-9]$")`):
+
+
+* Number of comments: ???
+* Number of threads: ???
+* Number of tensorflow examples: ???
+* Train set size: ???
+* Test set size: ???
+
+Typical metrics for the Dataflow job:
+
+* Total vCPU time:  ??? vCPU hr
+* Total memory time: ??? GB hr
+* Total persistent disk time: ??? GB hr
+* Elapsed time: ?h ?m (??? workers)
 
 # Create the conversational dataset
 
@@ -86,7 +108,7 @@ DATADIR="gs://${BUCKET?}/reddit/$(date +"%Y%m%d")"
 # The below uses values of $DATASET and $TABLE set
 # in the previous section.
 
-python data/reddit/create_data.py \
+python reddit/create_data.py \
   --output_dir ${DATADIR?} \
   --reddit_table ${PROJECT?}:${DATASET?}.${TABLE?} \
   --runner DataflowRunner \
