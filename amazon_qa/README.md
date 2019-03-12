@@ -58,12 +58,6 @@ View the running job on the
 View final output:
 
 ```
-please run data:read_records -- \
-  --tfrecords_file ${DATADIR?}/test-00000-of-00010.tfrecords \
-  --proto_format TF_EXAMPLE | less
-```
-
-```
 python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00010.tfrecords
 ```
 

@@ -62,11 +62,13 @@ def _parse_args():
     parser.add_argument(
         "--num_shards_test",
         default=10,
+        type=_positive_int,
         help="The number of shards for the test set.",
     )
     parser.add_argument(
         "--num_shards_train",
         default=100,
+        type=_positive_int,
         help="The number of shards for the train set.",
     )
     return parser.parse_known_args()
