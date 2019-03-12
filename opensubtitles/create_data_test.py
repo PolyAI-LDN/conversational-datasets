@@ -10,17 +10,16 @@ import tensorflow as tf
 
 from opensubtitles import create_data
 
-_TRAIN_FILE = """
-matt: AAAA
-[skip]
-BBBB
-
-
-CCCC
-DDDD [boom!]
-123
-12345
-"""
+_TRAIN_FILE = "\n".join([
+    "matt: AAAA",  # words followed by colons are stripped.
+    "[skip]",  # text in square brackets are removed.
+    "BBBB",
+    "", "", ""  # empty lines are ignored.
+    "CCCC",
+    "DDDD [boom!]",
+    "123",  # line length will be below the test --min_length.
+    "12345",  # line length will be above the test --min_length.
+])
 
 _TEST_FILE = """
 aaaa
