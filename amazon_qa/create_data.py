@@ -20,8 +20,8 @@ from apache_beam.io.tfrecordio import WriteToTFRecord
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 
-def _parse_args():
-    """Parse commad-line args."""
+def _parse_args(argv=None):
+    """Parse command-line args."""
 
     def _positive_int(value):
         """Define a positive integer ArgumentParser type."""
@@ -56,7 +56,7 @@ def _parse_args():
     )
     parser.add_argument(
         "--train_split",
-        default=0.9,
+        default=0.9, type=float,
         help="The proportion of data to put in the training set.",
     )
     parser.add_argument(
@@ -71,7 +71,7 @@ def _parse_args():
         type=_positive_int,
         help="The number of shards for the train set.",
     )
-    return parser.parse_known_args()
+    return parser.parse_known_args(argv)
 
 
 def _create_tuples(qa_object, min_words, max_words):
@@ -82,7 +82,8 @@ def _create_tuples(qa_object, min_words, max_words):
         product_id = qa_object['asin']
         if (_should_skip(question, min_words, max_words)
                 or _should_skip(answer, min_words, max_words)):
-            yield (product_id, question, answer)
+            return
+        yield (product_id, question, answer)
 
     elif "questions" in qa_object:
         product_id = qa_object['asin']
@@ -103,7 +104,8 @@ def _should_skip(text, min_words, max_words):
     return num_words < min_words or num_words > max_words
 
 
-def _create_example(product_id, question, answer):
+def create_example(product_id, question, answer):
+    """Create a tensorflow Example proto."""
     example = tf.train.Example()
     example.features.feature['product_id'].bytes_list.value.append(
         product_id.encode("utf-8")
@@ -114,7 +116,7 @@ def _create_example(product_id, question, answer):
     example.features.feature['response'].bytes_list.value.append(
         answer.encode("utf-8")
     )
-    return example.SerializeToString()
+    return example
 
 
 def _shuffle_examples(examples):
@@ -164,8 +166,9 @@ class _TrainTestSplitFn(beam.DoFn):
         )
 
 
-def _main():
-    args, pipeline_args = _parse_args()
+def run(argv=None):
+    """Run the beam pipeline."""
+    args, pipeline_args = _parse_args(argv)
 
     pipeline_options = PipelineOptions(pipeline_args)
     pipeline_options.view_as(SetupOptions).save_main_session = True
@@ -189,7 +192,7 @@ def _main():
 
     # Create the examples.
     serialized_examples = qa_tuples | "create examples" >> beam.Map(
-        lambda args: _create_example(*args)
+        lambda args: create_example(*args).SerializeToString()
     )
     serialized_examples = _shuffle_examples(serialized_examples)
 
@@ -222,4 +225,4 @@ def _main():
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
-    _main()
+    run()

@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import uuid
+from functools import partial
 from os import path
 
 import apache_beam as beam
@@ -20,8 +21,8 @@ from apache_beam.io.tfrecordio import WriteToTFRecord
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 
-def _parse_args():
-    """Parse commad-line args."""
+def _parse_args(argv=None):
+    """Parse command-line args."""
 
     def _positive_int(value):
         """Define a positive integer ArgumentParser type."""
@@ -54,6 +55,7 @@ def _parse_args():
         help="Output directory to write the dataset.")
     parser.add_argument(
         "--train_split", default=0.9,
+        type=float,
         help="The proportion of data to put in the training set.")
     parser.add_argument(
         "--num_shards_test", default=100,
@@ -64,7 +66,7 @@ def _parse_args():
         type=_positive_int,
         help="The number of shards for the train set.")
 
-    return parser.parse_known_args()
+    return parser.parse_known_args(argv)
 
 
 def _should_skip(line, min_length, max_length):
@@ -72,7 +74,7 @@ def _should_skip(line, min_length, max_length):
     return len(line) < min_length or len(line) > max_length
 
 
-def _create_example(previous_lines, line, file_id):
+def create_example(previous_lines, line, file_id):
     """Creates serialized tensorflow examples with multi-line context
 
     The examples will include:
@@ -99,7 +101,8 @@ def _create_example(previous_lines, line, file_id):
 
     example.features.feature['response'].bytes_list.value.append(
         line.encode("utf-8"))
-    return example.SerializeToString()
+
+    return example
 
 
 def _preprocess_line(line):
@@ -118,48 +121,33 @@ def _preprocess_line(line):
     return line
 
 
-class _CreateExampleFn(beam.DoFn):
-    """ Creates tf.examples from a text file of movie subtitles"""
-    def __init__(self, min_length, max_length, num_extra_contexts):
-        """constructor
+def _create_examples_from_file(file_name, min_length, max_length,
+                               num_extra_contexts):
+    _, file_id = path.split(file_name)
+    previous_lines = []
+    for line in FileSystems.open(file_name, "application/octet-stream"):
+        line = _preprocess_line(line)
+        if not line:
+            continue
 
-        Args:
-            min_length: The minimum line length in chars to be included as
-                an example
-            max_length: The maximum line length in chars to be included as
-                an example
-            num_extra_contexts: The number of extra contexts (lines) to be
-                included in each example
-        """
-        self._min_length = min_length
-        self._max_length = max_length
-        self._num_extra_contexts = num_extra_contexts
+        should_skip = _should_skip(
+            line,
+            min_length=min_length,
+            max_length=max_length)
 
-    def process(self, file_name):
-        _, file_id = path.split(file_name)
-        previous_lines = []
-        for line in FileSystems.open(file_name, "application/octet-stream"):
-            line = _preprocess_line(line)
-            if not line:
-                continue
-
-            should_skip = _should_skip(
-                line,
-                min_length=self._min_length,
-                max_length=self._max_length)
-
-            if previous_lines:
-                should_skip |= _should_skip(
-                    previous_lines[-1],
-                    min_length=self._min_length,
-                    max_length=self._max_length)
+        if previous_lines:
+            should_skip |= _should_skip(
+                previous_lines[-1],
+                min_length=min_length,
+                max_length=max_length)
 
             if not should_skip:
-                yield _create_example(previous_lines, line, file_id)
+                example = create_example(previous_lines, line, file_id)
+                yield example.SerializeToString()
 
-            previous_lines.append(line)
-            if len(previous_lines) > self._num_extra_contexts + 1:
-                del previous_lines[0]
+        previous_lines.append(line)
+        if len(previous_lines) > num_extra_contexts + 1:
+            del previous_lines[0]
 
 
 def _shuffle_examples(examples):
@@ -192,7 +180,6 @@ class _TrainTestSplitFn(beam.DoFn):
 
         file_id, = example.features.feature['file_id'].bytes_list.value
         split_value = self._split_value(file_id)
-
         split = (
             self.TRAIN_TAG if split_value < self._train_split else
             self.TEST_TAG)
@@ -209,8 +196,9 @@ class _TrainTestSplitFn(beam.DoFn):
         )
 
 
-def _main():
-    args, pipeline_args = _parse_args()
+def run(argv=None):
+    """Run the beam pipeline."""
+    args, pipeline_args = _parse_args(argv)
 
     pipeline_options = PipelineOptions(pipeline_args)
     pipeline_options.view_as(SetupOptions).save_main_session = True
@@ -224,10 +212,12 @@ def _main():
                  len(sentence_files), args.sentence_files)
     assert len(sentence_files) > 0
     sentence_files = p | beam.Create(sentence_files)
-    serialized_examples = sentence_files | "create examples" >> beam.ParDo(
-        _CreateExampleFn(min_length=args.min_length,
-                         max_length=args.max_length,
-                         num_extra_contexts=args.num_extra_contexts))
+    serialized_examples = sentence_files | "create examples" >> beam.FlatMap(
+        partial(_create_examples_from_file,
+                min_length=args.min_length,
+                max_length=args.max_length,
+                num_extra_contexts=args.num_extra_contexts)
+    )
 
     serialized_examples = _shuffle_examples(serialized_examples)
 
@@ -252,4 +242,4 @@ def _main():
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
-    _main()
+    run()

@@ -6,17 +6,17 @@
 
 * Input files: 38
 * Number of QA dictionaries: 1,569,513
-* Number of tuples: 3,322,057
-* Number of de-duplicated tuples: 3,286,815
-* Train set size: 2,954,149
-* Test set size: 332,666
+* Number of tuples: 4,035,625
+* Number of de-duplicated tuples: 3,990,033
+* Train set size: 3,586,014
+* Test set size: 404,019
 
 Typical metrics for the Dataflow job:
 
-* Total vCPU time:  0.642 vCPU hr
-* Total memory time: 2.408 GB hr
-* Total persistent disk time: 160.509 GB hr
-* Elapsed time: 15m (4 workers)
+* Total vCPU time:  0.707 vCPU hr
+* Total memory time: 2.653 GB hr
+* Total persistent disk time: 176.864 GB hr
+* Elapsed time: 17m (4 workers)
 
 # Create the conversational dataset
 

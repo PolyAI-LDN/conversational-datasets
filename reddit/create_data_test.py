@@ -1,12 +1,145 @@
 """Tests for create_data.py."""
 
+import copy
 import json
+import shutil
+import tempfile
 import unittest
+from glob import glob
+from os import path
+
+import tensorflow as tf
 
 from reddit import create_data
 
 
+class CreateDataPipelineTest(unittest.TestCase):
+    """Test running the pipeline end-to-end."""
+
+    def setUp(self):
+        self._temp_dir = tempfile.mkdtemp()
+        self.maxDiff = None
+
+    def tearDown(self):
+        shutil.rmtree(self._temp_dir)
+
+    def test_run(self):
+        with open("reddit/testdata/simple_thread.json") as f:
+            comments = json.loads(f.read())
+
+        # Duplicate the thread with a different ID, chosing a link_id that
+        # will be put in the test set.
+        test_comments = []
+        for comment in comments:
+            test_comment = copy.copy(comment)
+            test_comment['link_id'] = "t3_testthread"
+            test_comments.append(test_comment)
+
+        create_data.run(
+            argv=[
+                "--runner=DirectRunner",
+                "--reddit_table=ignored",
+                "--output_dir=" + self._temp_dir,
+                "--num_shards_test=2",
+                "--num_shards_train=2",
+                "--min_length=4",
+                "--max_length=5",
+                "--train_split=0.5",
+            ],
+            comments=(comments + test_comments)
+        )
+
+        self.assertItemsEqual(
+            [path.join(self._temp_dir, expected_file) for expected_file in
+             ["train-00000-of-00002.tfrecords",
+              "train-00001-of-00002.tfrecords"]],
+            glob(path.join(self._temp_dir, "train-*"))
+        )
+        self.assertItemsEqual(
+            [path.join(self._temp_dir, expected_file) for expected_file in
+             ["test-00000-of-00002.tfrecords",
+              "test-00001-of-00002.tfrecords"]],
+            glob(path.join(self._temp_dir, "test-*"))
+        )
+
+        train_examples = self._read_examples("train-*")
+        expected_train_examples = [
+            self._create_example(
+                {
+                    'context': "AAAA",
+                    'context_author': "author-A",
+                    'response': "BBBB",
+                    'response_author': "author-B",
+                    'subreddit': "subreddit-A",
+                    'thread_id': 'thread-A',
+                }
+            ),
+            self._create_example(
+                {
+                    'context/0': "AAAA",
+                    'context': "BBBB",
+                    'context_author': "author-B",
+                    'response': "CCCC",
+                    'response_author': "author-C",
+                    'subreddit': "subreddit-A",
+                    'thread_id': 'thread-A',
+                }
+            ),
+            self._create_example(
+                {
+                    'context/0': "AAAA",
+                    'context': "BBBB",
+                    'context_author': "author-B",
+                    'response': "DDDD",
+                    'response_author': "author-D",
+                    'subreddit': "subreddit-A",
+                    'thread_id': 'thread-A',
+                }
+            ),
+            self._create_example(
+                {
+                    'context/1': "AAAA",
+                    'context/0': "BBBB",
+                    'context': "DDDD",
+                    'context_author': "author-D",
+                    'response': "EEEE",
+                    'response_author': "author-E",
+                    'subreddit': "subreddit-A",
+                    'thread_id': 'thread-A',
+                }
+            ),
+        ]
+        self.assertItemsEqual(expected_train_examples, train_examples)
+
+        expected_test_examples = []
+        for example in expected_train_examples:
+            example.features.feature['thread_id'].bytes_list.value[0] = (
+                "testthread").encode("utf-8")
+            expected_test_examples.append(example)
+
+        test_examples = self._read_examples("test-*")
+        self.assertItemsEqual(expected_test_examples, test_examples)
+
+    def _read_examples(self, pattern):
+        examples = []
+        for file_name in glob(path.join(self._temp_dir, pattern)):
+            for record in tf.io.tf_record_iterator(file_name):
+                example = tf.train.Example()
+                example.ParseFromString(record)
+                examples.append(example)
+        return examples
+
+    @staticmethod
+    def _create_example(features):
+        example = tf.train.Example()
+        for feature_name, feature_value in features.items():
+            example.features.feature[feature_name].bytes_list.value.append(
+                feature_value.encode("utf-8"))
+        return example
+
+
 class CreateDataTest(unittest.TestCase):
+    """Test individual helper functions."""
 
     def test_trim(self):
         self.assertEqual(
@@ -135,9 +268,6 @@ class CreateDataTest(unittest.TestCase):
             range(max(i - 11, 0), i)
             for i in range(2, 2001)
         ], paths)
-
-    def test_create_examples(self):
-        pass
 
 
 if __name__ == "__main__":

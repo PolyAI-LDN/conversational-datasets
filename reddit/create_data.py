@@ -21,7 +21,7 @@ from apache_beam.io.tfrecordio import WriteToTFRecord
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 
-def _parse_args():
+def _parse_args(argv=None):
     """Parse command line arguments."""
 
     def _positive_int(value):
@@ -64,7 +64,7 @@ def _parse_args():
     )
     parser.add_argument(
         "--train_split",
-        default=0.9,
+        default=0.9, type=float,
         help="The proportion of data to put in the training set.",
     )
     parser.add_argument(
@@ -79,7 +79,7 @@ def _parse_args():
         type=_positive_int,
         help="The number of shards for the train set.",
     )
-    args, pipeline_args = parser.parse_known_args()
+    return parser.parse_known_args(argv)
 
 
 # Represent a reddit comment.
@@ -258,14 +258,26 @@ class _TrainTestSplitFn(beam.DoFn):
         )
 
 
-def _main():
-    args, pipeline_args = _parse_args()
+def run(argv=None, comments=None):
+    """Run the beam pipeline.
+
+    Args:
+        argv: (optional) the command line flags to parse.
+        comments_collection: (optional) a list of comment JSON objects to
+            process. Used in unit-tests to avoid requiring a BigQuery source.
+    """
+    args, pipeline_args = _parse_args(argv)
 
     pipeline_options = PipelineOptions(pipeline_args)
     pipeline_options.view_as(SetupOptions).save_main_session = True
     p = beam.Pipeline(options=pipeline_options)
-    comments = p | ("Read " + args.reddit_table) >> Read(
-        BigQuerySource(args.reddit_table))
+
+    if comments is not None:
+        comments = p | ("Read in-memory comments") >> beam.Create(comments)
+    else:
+        comments = p | ("Read " + args.reddit_table) >> Read(
+            BigQuerySource(args.reddit_table))
+
     comments |= (
         "Normalise comments" >> beam.Map(
             partial(normalise_comment, max_length=args.max_length)))
@@ -313,4 +325,4 @@ def _main():
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
-    _main()
+    run()
