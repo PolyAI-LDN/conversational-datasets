@@ -21,7 +21,7 @@ from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 
 def _parse_args():
-    """Parse commad-line args."""
+    """Parse command-line args."""
 
     def _positive_int(value):
         """Define a positive integer ArgumentParser type."""
@@ -56,7 +56,7 @@ def _parse_args():
     )
     parser.add_argument(
         "--train_split",
-        default=0.9,
+        default=0.9, type=float,
         help="The proportion of data to put in the training set.",
     )
     parser.add_argument(

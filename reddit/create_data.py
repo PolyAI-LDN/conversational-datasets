@@ -64,7 +64,7 @@ def _parse_args():
     )
     parser.add_argument(
         "--train_split",
-        default=0.9,
+        default=0.9, type=float,
         help="The proportion of data to put in the training set.",
     )
     parser.add_argument(

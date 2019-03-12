@@ -20,8 +20,8 @@ from apache_beam.io.tfrecordio import WriteToTFRecord
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 
-def _parse_args():
-    """Parse commad-line args."""
+def _parse_args(argv=None):
+    """Parse command-line args."""
 
     def _positive_int(value):
         """Define a positive integer ArgumentParser type."""
@@ -54,6 +54,7 @@ def _parse_args():
         help="Output directory to write the dataset.")
     parser.add_argument(
         "--train_split", default=0.9,
+        type=float,
         help="The proportion of data to put in the training set.")
     parser.add_argument(
         "--num_shards_test", default=100,
@@ -64,7 +65,7 @@ def _parse_args():
         type=_positive_int,
         help="The number of shards for the train set.")
 
-    return parser.parse_known_args()
+    return parser.parse_known_args(argv)
 
 
 def _should_skip(line, min_length, max_length):
@@ -72,7 +73,7 @@ def _should_skip(line, min_length, max_length):
     return len(line) < min_length or len(line) > max_length
 
 
-def _create_example(previous_lines, line, file_id):
+def create_example(previous_lines, line, file_id):
     """Creates serialized tensorflow examples with multi-line context
 
     The examples will include:
@@ -99,7 +100,8 @@ def _create_example(previous_lines, line, file_id):
 
     example.features.feature['response'].bytes_list.value.append(
         line.encode("utf-8"))
-    return example.SerializeToString()
+
+    return example
 
 
 def _preprocess_line(line):
@@ -154,8 +156,9 @@ class _CreateExampleFn(beam.DoFn):
                     min_length=self._min_length,
                     max_length=self._max_length)
 
-            if not should_skip:
-                yield _create_example(previous_lines, line, file_id)
+                if not should_skip:
+                    example = create_example(previous_lines, line, file_id)
+                    yield example.SerializeToString()
 
             previous_lines.append(line)
             if len(previous_lines) > self._num_extra_contexts + 1:
@@ -192,7 +195,6 @@ class _TrainTestSplitFn(beam.DoFn):
 
         file_id, = example.features.feature['file_id'].bytes_list.value
         split_value = self._split_value(file_id)
-
         split = (
             self.TRAIN_TAG if split_value < self._train_split else
             self.TEST_TAG)
@@ -209,8 +211,9 @@ class _TrainTestSplitFn(beam.DoFn):
         )
 
 
-def _main():
-    args, pipeline_args = _parse_args()
+def run(argv=None):
+    """Run the beam pipeline."""
+    args, pipeline_args = _parse_args(argv)
 
     pipeline_options = PipelineOptions(pipeline_args)
     pipeline_options.view_as(SetupOptions).save_main_session = True
@@ -252,4 +255,4 @@ def _main():
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
-    _main()
+    run()
