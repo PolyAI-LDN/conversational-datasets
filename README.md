@@ -10,7 +10,7 @@ This repository provides tools to create reproducible datasets for training and 
 
 * [Reddit](reddit) - 3.7 billion comments structured in threaded conversations
 * [OpenSubtitles](opensubtitles) - over 400 million lines from movie and television subtitles. Also available in other languages
-* [Amazon QA](amazon_qa) - almost 4 million question response pairs in the context of Amazon products
+* [Amazon QA](amazon_qa) - over 3.6 million question response pairs in the context of Amazon products
 
 Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets, and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
 
