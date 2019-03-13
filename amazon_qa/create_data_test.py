@@ -17,10 +17,10 @@ _TEST_DATA = [
         'asin': "3",  # gets put in test set.
     },
     {
-        # Duplicate object should not create duplicate examples.
+        # Duplicate QA should not create duplicate examples.
         'question': "A A A",
         'answer': "B B B",
-        'asin': "3",
+        'asin': "4",
     },
     {
         'question': "A A A A A A",  # too many words, will be skipped.
