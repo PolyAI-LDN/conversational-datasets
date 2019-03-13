@@ -14,7 +14,7 @@ This repository provides tools to create reproducible datasets for training and 
 
 Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets, and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
 
-Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets that can be used to define reproducible evaluations in research papers.
+Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets, with deterministic train/test splits, that can be used to define reproducible evaluations in research papers.
 
 ## Benchmarks
 
@@ -201,5 +201,5 @@ We happily accept contributions in the form of pull requests.
 Each pull request is tested in CircleCI - it is first linted with `flake8` and then the unit tests are run. In particular we would be interested in:
 
 * new datasets
-* adaptations to the scripts so they work better in your environment
+* adaptations to the scripts so they work better in your environment (e.g. other Apache Beam runners, other cloud storage solutions, other example formats)
 * new benchmarks in [`BENCHMARKS.md`](BENCHMARKS.md)
