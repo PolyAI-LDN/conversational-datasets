@@ -15,9 +15,9 @@ Below are some statistics of the conversational dataset:
 * Input files: 38
 * Number of QA dictionaries: 1,569,513
 * Number of tuples: 4,035,625
-* Number of de-duplicated tuples: 3,990,033
-* Train set size: 3,586,014
-* Test set size: 404,019
+* Number of de-duplicated tuples: 3,689,912
+* Train set size: 3,316,905
+* Test set size: 373,007
 
 Typical metrics for the Dataflow job:
 

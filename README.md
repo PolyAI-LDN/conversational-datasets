@@ -28,7 +28,7 @@ any dataset in this format is referred to elsewhere as simply a
 
 Datasets are stored as [tensorflow record files](`https://www.tensorflow.org/tutorials/load_data/tf_records`) containing serialized [tensorflow example](https://www.tensorflow.org/tutorials/load_data/tf_records#data_types_for_tfexample) protocol buffers.
 The training set is stored as one collection of tensorflow record files, and
-the test set as another.
+the test set as another. Examples are shuffled randomly within the tensorflow record files.
 
 The train/test split is always deterministic, so that whenever the dataset is generated, the same train/test split is created.
 

@@ -177,7 +177,7 @@ def run(argv=None):
     lines = p | "read qa files" >> ReadFromText(args.file_pattern)
 
     # The lines are not JSON, but the string representation of python
-    # dictionary objects.
+    # dictionary objects. Parse them with ast.literal_eval.
     json_objects = lines | "parsing dictionaries" >> beam.Map(ast.literal_eval)
     qa_tuples = json_objects | "create tuples" >> beam.FlatMap(
         partial(
@@ -186,9 +186,9 @@ def run(argv=None):
     )
 
     # Remove duplicate examples.
-    qa_tuples |= "key by value" >> beam.Map(lambda v: (v, None))
+    qa_tuples |= "key by QA" >> beam.Map(lambda v: (v[1:], v))
     qa_tuples |= "group duplicates" >> beam.GroupByKey()
-    qa_tuples |= "remove duplicates" >> beam.Map(lambda v: v[0])
+    qa_tuples |= "remove duplicates" >> beam.Map(lambda v: sorted(v[1])[0])
 
     # Create the examples.
     serialized_examples = qa_tuples | "create examples" >> beam.Map(
