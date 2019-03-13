@@ -10,11 +10,11 @@ This repository provides tools to create reproducible datasets for training and 
 
 * [Reddit](reddit) - 3.7 billion comments structured in threaded conversations
 * [OpenSubtitles](opensubtitles) - over 400 million lines from movie and television subtitles. Also available in other languages
-* [Amazon QA](amazon_qa) - almost 4 million question response pairs in the context of Amazon products
+* [Amazon QA](amazon_qa) - over 3.6 million question response pairs in the context of Amazon products
 
 Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets, and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
 
-Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets that can be used to define reproducible evaluations in research papers.
+Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets, with deterministic train/test splits, that can be used to define reproducible evaluations in research papers.
 
 ## Benchmarks
 
@@ -105,7 +105,7 @@ tensor_dict = iterator.get_next()
 
 ## Getting Started
 
-Conversational datasets are created using [Apache Beam pipeline](https://beam.apache.org/) scripts, run on [Google Dataflow](https://cloud.google.com/dataflow/). Apache Beam requires python 2.7, so set up a python 2.7 virtual environment:
+Conversational datasets are created using [Apache Beam pipeline](https://beam.apache.org/) scripts, run on [Google Dataflow](https://cloud.google.com/dataflow/). This parallelises the data processing pipeline across may worker machines. Apache Beam requires python 2.7, so set up a python 2.7 virtual environment:
 
 ```
 python2.7 -m virtualenv venv
@@ -115,8 +115,7 @@ pip install -r requirements.txt
 
 The Dataflow scripts write conversational datasets to Google cloud storage, so you will need to [create a bucket](https://cloud.google.com/storage/docs/creating-buckets) to save the dataset to.
 
-Lastly, you will need to [set up authentication](
-https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
+Lastly, you will need to [set up authentication](https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
 
 ```
 export GOOGLE_APPLICATION_CREDENTIALS={{json file key location}}
@@ -126,11 +125,15 @@ This should be enough to follow the instructions for creating each individual da
 
 ## Datasets
 
-### Reddit
+Each dataset has its own directory, which contains a dataflow script, instructions for running it, and unit tests.
 
-### OpenSubtitles
+|                                	|                                     	| Train set size 	| Test set size 	|
+|--------------------------------	|-------------------------------------	|----------------	|---------------	|
+| [Reddit](reddit)               	| 2016 - June 2018                    	| 416 million    	| 46 million    	|
+|                                	| 2015 - 2019                         	| 654 million    	| 72 million    	|
+| [OpenSubtitles](opensubtitles) 	| English (other languages available) 	| 286 million    	| 33 million    	|
+| [Amazon QA](amazon_qa)         	| -                                   	| 3 million      	| 0.3 million   	|
 
-### Amazon QA
 
 ## Evaluation
 
@@ -190,4 +193,13 @@ The following papers use the 1-of-100 ranking accuracy in particular:
 
 ## Citations
 
+When using these datasets in your work, please cite:
+
 ## Contributing
+
+We happily accept contributions in the form of pull requests.
+Each pull request is tested in CircleCI - it is first linted with `flake8` and then the unit tests are run. In particular we would be interested in:
+
+* new datasets
+* adaptations to the scripts so they work better in your environment (e.g. other Apache Beam runners, other cloud storage solutions, other example formats)
+* new benchmarks in [`BENCHMARKS.md`](BENCHMARKS.md)
