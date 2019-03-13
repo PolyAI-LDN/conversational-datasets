@@ -90,6 +90,7 @@ echo "${QUERY?}" | bq query \
   --use_legacy_sql=true
 ```
 
+The data from January 2016 to June 2018 was used in ** insert paper reference ** .
 
 ## Run the dataflow script
 
