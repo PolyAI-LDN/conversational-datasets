@@ -112,8 +112,8 @@ def _preprocess_line(line):
     # NOTE: this wont work if the speaker's name has more than one word
     line = re.sub('(?:^|(?:[.!?]\\s))(\\w+):', "", line)
 
-    # Remove anything between square brackets (corresponds to acoustic events)
-    line = re.sub("\\[(.*?)\\]", "", line)
+    # Remove anything between brackets (corresponds to acoustic events).
+    line = re.sub("[\\[(](.*?)[\\])]", "", line)
 
     # Strip blanks hyphens and line breaks
     line = line.strip(" -\n")

@@ -20,9 +20,9 @@ character names and auditory description text.
 Below are statistics for the English dataset:
 
 * Input files: 4,415
-* Number of examples: 320,233,703
-* Train set size: 286,655,424
-* Test set size: 33,578,279
+* Number of examples: 316,891,717
+* Train set size: 283,651,561
+* Test set size: 33,240,156
 
 Typical metrics for the Dataflow job:
 
