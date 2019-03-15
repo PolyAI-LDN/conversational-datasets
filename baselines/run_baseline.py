@@ -6,6 +6,7 @@ For usage see README.md.
 import abc
 import argparse
 import enum
+import random
 
 import glog
 import numpy as np
@@ -213,6 +214,7 @@ def _load_data(file_pattern, num_examples):
     complete = False
     with tqdm(total=num_examples) as progress_bar:
         file_names = tf.gfile.Glob(file_pattern)
+        random.shuffle(file_names)
         if not file_names:
             raise ValueError(
                 "No files matched pattern {}".format(file_pattern))
