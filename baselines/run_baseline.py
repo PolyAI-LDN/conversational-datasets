@@ -122,11 +122,10 @@ class TfIdfMethod(BaselineMethod):
     def train(self, contexts, responses):
         """Fit the tf-idf transform and compute idf statistics."""
         self._vectorizer = TfidfVectorizer()
-
         count_matrix = self._vectorizer.fit_transform(contexts + responses)
-
         if not self._apply_bm25_transform:
             return
+
         n_samples, n_features = count_matrix.shape
         df = _document_frequency(count_matrix)
         idf = np.log((n_samples - df + 0.5) / (df + 0.5))
@@ -235,6 +234,10 @@ def _load_data(file_pattern, num_examples):
             if complete:
                 break
     glog.info("Read %i examples", len(contexts))
+    if not complete:
+        glog.warning(
+            "%i examples were requested, but dataset only contains %i.",
+            num_examples, len(contexts))
     return contexts, responses
 
 
