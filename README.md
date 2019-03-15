@@ -56,7 +56,7 @@ identified using additional features.
 
 ### Reading conversational datasets
 
-The [`tools/tfrutil.py`](tools/tfrutil.py) and [`baselines/run_baseline.py`] scripts demonstrate how to read a conversational dataset in Python, using functions from the tensorflow library.
+The [`tools/tfrutil.py`](tools/tfrutil.py) and [`baselines/run_baseline.py`](baselines/run_baseline.py) scripts demonstrate how to read a conversational dataset in Python, using functions from the tensorflow library.
 
 Below is some example tensorflow code for reading a conversational dataset
 into a tensorflow graph:
