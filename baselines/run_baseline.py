@@ -107,9 +107,9 @@ class TfIdfMethod(BaselineMethod):
     http://nlp.stanford.edu/IR-book/html/htmledition/okapi-bm25-a-non-binary-model-1.html
 
     Args:
-        apply_bm25_transform: boolean, optional (default=True) - whether to
-            apply the bm25 transformation on top of tf-idf. If False, this
-            is just the TF-IDF baseline method.
+        apply_bm25_transform: boolean - whether to apply the bm25
+            transformation on top of tf-idf. If False, this is just the TF-IDF
+            baseline method.
         k1: float, optional (default=2.0)
         b: float, optional (default=0.75)
 
