@@ -1,4 +1,4 @@
-"""Evaluate baselines models on conversational datasets.
+"""Evaluate baseline models on conversational datasets.
 
 For usage see README.md.
 """
@@ -240,7 +240,18 @@ def _load_data(file_pattern, num_examples):
         glog.warning(
             "%i examples were requested, but dataset only contains %i.",
             num_examples, len(contexts))
-    return contexts, responses
+
+    unique_c, unique_r = [], []
+    seen_contexts = set()
+
+    for context, response in zip(contexts, responses):
+        if context in seen_contexts:
+            continue
+        seen_contexts.add(context)
+        unique_c.append(context)
+        unique_r.append(response)
+
+    return unique_c, unique_r
 
 
 if __name__ == "__main__":
