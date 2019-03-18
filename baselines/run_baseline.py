@@ -52,6 +52,8 @@ class Method(enum.Enum):
 
     # Vector mapping methods.
     USE_MAP = 6
+    USE_LARGE_MAP = 7
+    ELMO_MAP = 8
 
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
@@ -78,6 +80,15 @@ class Method(enum.Enum):
                 encoder=vector_based.TfHubEncoder(
                     "https://tfhub.dev/google/"
                     "universal-sentence-encoder/2"))
+        elif self == self.USE_LARGE_MAP:
+            return vector_based.VectorMappingMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/"
+                    "universal-sentence-encoder-large/3"))
+        elif self == self.ELMO_MAP:
+            return vector_based.VectorMappingMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/elmo/1"))
         raise ValueError("Unknown method {}".format(self))
 
     def __str__(self):
