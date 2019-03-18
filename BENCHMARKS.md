@@ -22,3 +22,6 @@ Running on the data from January 2015 to December 2018 inclusive.
 ## OpenSubtitles
 
 ## AmazonQA
+
+
+use-large-sim: 51.4%

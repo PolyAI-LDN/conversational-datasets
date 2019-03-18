@@ -1,0 +1,298 @@
+"""Methods for conversational response ranking based on vector comparisons."""
+
+import abc
+import itertools
+
+import glog
+import numpy as np
+import tensorflow as tf
+import tensorflow_hub
+from sklearn.model_selection import train_test_split
+from tqdm import tqdm
+
+from baselines import method
+
+
+class Encoder(object):
+    """A model that maps from text to dense vectors."""
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def encode(self, texts):
+        """Encode the given texts as vectors.
+
+        Args:
+            texts: a list of N strings, to be encoded.
+
+        Returns:
+            an (N, d) numpy matrix of encodings.
+        """
+        pass
+
+
+class TfHubEncoder(Encoder):
+    """An encoder that is loaded as a module from tensorflow hub.
+
+    The tensorflow hub module must take a vector of strings, and return
+    a matrix of encodings.
+
+    Args:
+        uri: (string) the tensorflow hub URI for the model.
+    """
+    def __init__(self, uri):
+        """Create a new `TfHubEncoder` object."""
+        self._session = tf.Session(graph=tf.Graph())
+        with self._session.graph.as_default():
+            glog.info("Loading %s model from tensorflow hub", uri)
+            embed_fn = tensorflow_hub.Module(uri)
+            self._fed_texts = tf.placeholder(shape=[None], dtype=tf.string)
+            self._embeddings = embed_fn(self._fed_texts)
+            init_ops = (
+                tf.global_variables_initializer(), tf.tables_initializer())
+        glog.info("Initializing graph.")
+        self._session.run(init_ops)
+
+    def encode(self, texts):
+        """Encode the given texts."""
+        return self._session.run(self._embeddings, {self._fed_texts: texts})
+
+
+class VectorSimilarityMethod(method.BaselineMethod):
+    """Ranks responses using cosine similarity of context & response vectors.
+
+    Args:
+        encoder: the `Encoder` object to use.
+    """
+    def __init__(self, encoder):
+        """Create a new `VectorSimilarityMethod` object."""
+        self._encoder = encoder
+
+    def train(self, contexts, responses):
+        """Train on the contexts and responses. Does nothing."""
+        pass
+
+    def rank_responses(self, contexts, responses):
+        """Rank the responses for each context, using cosine similarity."""
+        contexts_matrix = self._encoder.encode(contexts)
+        responses_matrix = self._encoder.encode(responses)
+        responses_matrix /= np.linalg.norm(responses_matrix)
+        similarities = np.matmul(contexts_matrix, responses_matrix.T)
+        return np.argmax(similarities, axis=1)
+
+
+class VectorMappingMethod(method.BaselineMethod):
+    """Applies a linear mapping to the response side and ranks with similarity.
+
+    This learns a [dim, dim] weights matrix, and maps the response vector `x`
+    to `x + weights.x`. The weights matrix is learned using gradient descent
+    on the train set, and the dot product loss from
+    https://arxiv.org/abs/1705.00652 . A grid search over hyper-parameters is
+    performed, and the weights that get the best accuracy on the dev set are
+    used.
+
+    Args:
+        encoder: the `Encoder` object to use.
+        learning_rates: the learning rates to try in grid search.
+        regularizers: the regularizers to try in grid search.
+    """
+    def __init__(
+        self,
+        encoder,
+        learning_rates=(10.0, 3.0, 1.0, 0.3, 0.1, 0.03, 0.01),
+        regularizers=(0, 0.1, 0.01, 0.001),
+    ):
+        """Create a new `VectorMappingMethod` object."""
+        self._encoder = encoder
+        self._learning_rates = learning_rates
+        self._regularizers = regularizers
+
+    def train(self, contexts, responses):
+        """Train on the contexts and responses."""
+        glog.info(
+            "Training on %i contexts and responses.", len(contexts))
+        (contexts_train, contexts_dev,
+         responses_train, responses_dev
+         ) = self._create_train_and_dev(contexts, responses)
+        glog.info(
+            "Created a training set of size %i, and a dev set of size %i.",
+            contexts_train.shape[0], contexts_dev.shape[0])
+        self._build_mapping_graph(
+            contexts_train, contexts_dev,
+            responses_train, responses_dev
+        )
+        self._grid_search()
+
+    # Batch size to use when encoding texts.
+    _ENCODING_BATCH_SIZE = 100
+    _TRAIN_BATCH_SIZE = 100
+    _MAX_EPOCHS = 150
+
+    def _create_train_and_dev(self, contexts, responses):
+        """Create a train and dev set of context and response vectors."""
+        glog.info("Encoding the train set.")
+        context_encodings = []
+        response_encodings = []
+
+        for i in tqdm(range(0, len(contexts), self._ENCODING_BATCH_SIZE)):
+            contexts_batch = contexts[i:i + self._ENCODING_BATCH_SIZE]
+            responses_batch = responses[i:i + self._ENCODING_BATCH_SIZE]
+            context_encodings.append(self._encoder.encode(contexts_batch))
+            response_encodings.append(self._encoder.encode(responses_batch))
+
+        context_encodings = np.concatenate(
+            context_encodings).astype(np.float32)
+        response_encodings = np.concatenate(
+            response_encodings).astype(np.float32)
+        return train_test_split(
+            context_encodings, response_encodings,
+            test_size=0.2)
+
+    def _build_mapping_graph(self,
+                             contexts_train, contexts_dev,
+                             responses_train, responses_dev):
+        """Build the graph that applies a learned mapping to the vectors."""
+        self._session = tf.Session(graph=tf.Graph())
+        encoding_dim = responses_train.shape[1]
+        with self._session.graph.as_default():
+
+            def read_batch(contexts, responses):
+                dataset = tf.data.Dataset.from_tensor_slices(
+                    (contexts, responses))
+                dataset = dataset.shuffle(self._TRAIN_BATCH_SIZE * 8)
+                dataset = dataset.batch(
+                    self._TRAIN_BATCH_SIZE)
+                return dataset.make_initializable_iterator()
+
+            self._train_iterator = read_batch(contexts_train, responses_train)
+            self._dev_iterator = read_batch(contexts_dev, responses_dev)
+
+            (contexts_batch_train,
+             responses_batch_train) = self._train_iterator.get_next()
+            (contexts_batch_dev,
+             responses_batch_dev) = self._dev_iterator.get_next()
+
+            self._weights = tf.get_variable(
+                "weights",
+                dtype=tf.float32, shape=[encoding_dim, encoding_dim],
+                initializer=tf.orthogonal_initializer())
+            responses_mapped_train = responses_batch_train + tf.matmul(
+                responses_batch_train, self._weights)
+            responses_mapped_dev = responses_batch_dev + tf.matmul(
+                responses_batch_dev, self._weights)
+
+            # Create the train op.
+            self._create_train_op(contexts_batch_train, responses_mapped_train)
+
+            # Create the accuracy eval metric.
+            dev_batch_size = tf.shape(contexts_batch_dev)[0]
+            self._accuracy = tf.metrics.accuracy(
+                labels=tf.range(dev_batch_size),
+                predictions=tf.argmax(
+                    tf.matmul(
+                        contexts_batch_dev, responses_mapped_dev,
+                        transpose_b=True),
+                    1)
+            )
+            self._local_init_op = tf.local_variables_initializer()
+            self._reset_op = tf.global_variables_initializer()
+
+    def _create_train_op(self, contexts_batch_train, responses_mapped_train):
+        """Create the train op."""
+        train_batch_size = tf.shape(contexts_batch_train)[0]
+        loss = tf.losses.softmax_cross_entropy(
+            onehot_labels=tf.one_hot(
+                tf.range(train_batch_size), train_batch_size),
+            label_smoothing=0.1,
+            logits=tf.matmul(
+                contexts_batch_train, responses_mapped_train,
+                transpose_b=True),
+            reduction=tf.losses.Reduction.MEAN)
+        self._learning_rate = tf.placeholder(dtype=tf.float32, shape=None)
+        self._regularizer = tf.placeholder(dtype=tf.float32, shape=None)
+        loss += self._regularizer * tf.reduce_mean(tf.abs(self._weights))
+        self._train_op = tf.contrib.training.create_train_op(
+            total_loss=loss,
+            optimizer=tf.train.AdagradOptimizer(
+                learning_rate=self._learning_rate))
+
+    def _grid_search(self):
+        """Perform a grid search of training hyper-parameters.
+
+        The model that does the best on the dev set will be stored.
+        """
+
+        def _compute_accuracy():
+            self._session.run(self._local_init_op)
+            self._session.run(self._dev_iterator.initializer)
+            while True:
+                try:
+                    accuracy, _ = self._session.run(self._accuracy)
+                except tf.errors.OutOfRangeError:
+                    return accuracy
+
+        best_accuracy, best_learning_rate, best_regularizer = None, None, None
+
+        for learning_rate, regularizer in itertools.product(
+                self._learning_rates, self._regularizers):
+            # Train using this learning rate and regularizer.
+            self._session.run(self._reset_op)
+            best_accuracy_for_run = None
+            epochs_since_improvement = 0
+            epoch = 0
+            step = 0
+            glog.info(
+                "\n\nTraining with learning_rate = %.5f, "
+                "and regularizer = %.5f", learning_rate, regularizer)
+            self._session.run(self._train_iterator.initializer)
+
+            while epoch < self._MAX_EPOCHS:
+                try:
+                    loss = self._session.run(
+                        self._train_op,
+                        {self._learning_rate: learning_rate,
+                         self._regularizer: regularizer})
+                    step += 1
+
+                except tf.errors.OutOfRangeError:
+                    epoch += 1
+                    accuracy = _compute_accuracy()
+                    log_suffix = ""
+                    self._session.run(self._train_iterator.initializer)
+
+                    if best_accuracy is None or accuracy > best_accuracy:
+                        best_accuracy = accuracy
+                        best_learning_rate = learning_rate
+                        best_regularizer = regularizer
+                        self._weights_value = self._session.run(self._weights)
+                        log_suffix += "*"
+
+                    if (best_accuracy_for_run is None
+                            or accuracy > best_accuracy_for_run):
+                        epochs_since_improvement = 0
+                        best_accuracy_for_run = accuracy
+                        log_suffix += "*"
+
+                    glog.info(
+                        "epoch %i: step: %i, loss: %.3f, "
+                        "dev accuracy: %.2f%% %s",
+                        epoch, step, loss, accuracy * 100, log_suffix)
+
+                    epochs_since_improvement += 1
+                    if epochs_since_improvement >= 10:
+                        glog.info(
+                            "No improvement for %i epochs, terminating run.",
+                            epochs_since_improvement)
+                        break
+        glog.info(
+            "Best accuracy found was %.2f%%. With learning_rate = %.5f and "
+            "regularizer = %.5f.",
+            best_accuracy * 100,
+            best_learning_rate, best_regularizer)
+
+    def rank_responses(self, contexts, responses):
+        """Rank the responses for each context, using cosine similarity."""
+        contexts_matrix = self._encoder.encode(contexts)
+        responses_matrix = self._encoder.encode(responses)
+        responses_matrix += np.matmul(responses_matrix, self._weights_value)
+        similarities = np.matmul(contexts_matrix, responses_matrix.T)
+        return np.argmax(similarities, axis=1)

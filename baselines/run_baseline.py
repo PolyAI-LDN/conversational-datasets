@@ -3,7 +3,6 @@
 For usage see README.md.
 """
 
-import abc
 import argparse
 import enum
 import random
@@ -13,7 +12,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-import baselines
+from baselines import tf_idf, vector_based
 
 
 def _parse_args():
@@ -42,15 +41,43 @@ def _parse_args():
 
 
 class Method(enum.Enum):
+    # Keyword based methods.
     TF_IDF = 1
     BM25 = 2
+
+    # Vector similarity based methods.
+    USE_SIM = 3
+    USE_LARGE_SIM = 4
+    ELMO_SIM = 5
+
+    # Vector mapping methods.
+    USE_MAP = 6
 
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
         if self == self.TF_IDF:
-            return baselines.tf_idf.TfIdfMethod(apply_bm25_transform=False)
+            return tf_idf.TfIdfMethod(apply_bm25_transform=False)
         elif self == self.BM25:
-            return baselines.tf_idf.TfIdfMethod(apply_bm25_transform=True)
+            return tf_idf.TfIdfMethod(apply_bm25_transform=True)
+        elif self == self.USE_SIM:
+            return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/"
+                    "universal-sentence-encoder/2"))
+        elif self == self.USE_LARGE_SIM:
+            return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/"
+                    "universal-sentence-encoder-large/3"))
+        elif self == self.ELMO_SIM:
+            return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/elmo/1"))
+        elif self == self.USE_MAP:
+            return vector_based.VectorMappingMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/"
+                    "universal-sentence-encoder/2"))
         raise ValueError("Unknown method {}".format(self))
 
     def __str__(self):
@@ -64,38 +91,6 @@ class Method(enum.Enum):
             return Method[s]
         except KeyError:
             raise ValueError()
-
-
-class BaselineMethod(object):
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractmethod
-    def train(self, examples):
-        """Perform any training steps using the (context, response) examples.
-
-        Args:
-            examples: a list of `(context, response)` string tuples, containing
-                examples that can be used to set the parameters of this method.
-        """
-        pass
-
-    @abc.abstractmethod
-    def rank_responses(self, contexts, responses):
-        """Rank the responses for each context.
-
-        Args:
-            contexts: a list of strings giving the contexts to use.
-            responses: a list of responses to rank, of the same length
-                as `contexts`. These are shuffled, to help avoid cheating.
-
-        Returns:
-            predictions: a list of integers, giving the predictions indices
-                between 0 and `len(contexts)` that the method predicts for
-                assigning responses to the contexts. Explicitly, the method
-                predicts that `reponse[predictions[i]]` is the correct response
-                for `context[i]`.
-        """
-        pass
 
 
 def _evaluate_method(method, recall_k, contexts, responses):

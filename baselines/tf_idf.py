@@ -5,10 +5,10 @@ import scipy.sparse as sp
 from sklearn.feature_extraction.text import (TfidfVectorizer,
                                              _document_frequency)
 
-from baselines import run_baseline
+from baselines import method
 
 
-class TfIdfMethod(run_baseline.BaselineMethod):
+class TfIdfMethod(method.BaselineMethod):
     """TF-IDF and BM25 baselines, using weighted keyword matching.
 
     Adapted from https://github.com/arosh/BM25Transformer/blob/master/bm25.py
@@ -24,7 +24,7 @@ class TfIdfMethod(run_baseline.BaselineMethod):
 
     """
     def __init__(self, apply_bm25_transform=False, k1=2.0, b=0.75):
-        """Create a new BM25 object."""
+        """Create a new `TfIdfMethod` object."""
         self._apply_bm25_transform = apply_bm25_transform
         self._k1 = k1
         self._b = b
