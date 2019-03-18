@@ -1,8 +1,10 @@
+"""Abstract class to define a baseline response selection method."""
 
 import abc
 
 
 class BaselineMethod(object):
+    """Abstract class to define a baseline response selection method."""
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
