@@ -126,8 +126,8 @@ class VectorMappingMethod(method.BaselineMethod):
 
     # Batch size to use when encoding texts.
     _ENCODING_BATCH_SIZE = 100
-    _TRAIN_BATCH_SIZE = 100
-    _MAX_EPOCHS = 150
+    _TRAIN_BATCH_SIZE = 256
+    _MAX_EPOCHS = 100
 
     def _create_train_and_dev(self, contexts, responses):
         """Create a train and dev set of context and response vectors."""
@@ -156,16 +156,19 @@ class VectorMappingMethod(method.BaselineMethod):
         self._session = tf.Session(graph=tf.Graph())
         with self._session.graph.as_default():
 
-            def read_batch(contexts, responses):
+            def read_batch(contexts, responses, batch_size):
                 dataset = tf.data.Dataset.from_tensor_slices(
                     (contexts, responses))
-                dataset = dataset.shuffle(self._TRAIN_BATCH_SIZE * 8)
-                dataset = dataset.batch(
-                    self._TRAIN_BATCH_SIZE)
+                dataset = dataset.shuffle(batch_size * 8)
+                dataset = dataset.batch(batch_size)
                 return dataset.make_initializable_iterator()
 
-            self._train_iterator = read_batch(contexts_train, responses_train)
-            self._dev_iterator = read_batch(contexts_dev, responses_dev)
+            self._train_iterator = read_batch(
+                contexts_train, responses_train,
+                batch_size=self._TRAIN_BATCH_SIZE)
+            self._dev_iterator = read_batch(
+                contexts_dev, responses_dev,
+                batch_size=100)
 
             (contexts_batch_train,
              responses_batch_train) = self._train_iterator.get_next()
@@ -209,18 +212,30 @@ class VectorMappingMethod(method.BaselineMethod):
 
     def _compute_similarities(self, context_encodings, response_encodings,
                               is_train=False):
+        """Compute the similarities between context and responses.
+
+        Uses a learned mapping on the response side.
+        """
         with tf.variable_scope("compute_similarities", reuse=(not is_train)):
-            encoding_dim = context_encodings.shape[1]
-            weights = tf.get_variable(
-                "weights",
+            encoding_dim = int(context_encodings.shape[1])
+            mapping_weights = tf.get_variable(
+                "mapping_weights",
                 dtype=tf.float32,
                 shape=[encoding_dim, encoding_dim],
                 initializer=tf.orthogonal_initializer(),
                 regularizer=tf.contrib.layers.l2_regularizer(
                     self._regularizer),
             )
-            responses_mapped = response_encodings + tf.matmul(
-                response_encodings, weights)
+            residual_weight = tf.get_variable(
+                "residual_weight",
+                dtype=tf.float32,
+                shape=[],
+                initializer=tf.constant_initializer(1.0),
+            )
+
+            responses_mapped = tf.matmul(response_encodings, mapping_weights)
+            responses_mapped += residual_weight * response_encodings
+
             return tf.matmul(
                 context_encodings, responses_mapped,
                 transpose_b=True)
@@ -231,9 +246,10 @@ class VectorMappingMethod(method.BaselineMethod):
         tf.losses.softmax_cross_entropy(
             onehot_labels=tf.one_hot(
                 tf.range(train_batch_size), train_batch_size),
-            label_smoothing=0.1,
+            label_smoothing=0.2,
             logits=similarities,
-            reduction=tf.losses.Reduction.MEAN)
+            reduction=tf.losses.Reduction.MEAN
+        )
         self._learning_rate = tf.placeholder(dtype=tf.float32, shape=None)
         self._train_op = tf.contrib.training.create_train_op(
             total_loss=tf.losses.get_total_loss(),
