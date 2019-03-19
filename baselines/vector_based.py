@@ -2,6 +2,8 @@
 
 import abc
 import itertools
+import shutil
+import tempfile
 
 import glog
 import numpy as np
@@ -152,7 +154,6 @@ class VectorMappingMethod(method.BaselineMethod):
                              responses_train, responses_dev):
         """Build the graph that applies a learned mapping to the vectors."""
         self._session = tf.Session(graph=tf.Graph())
-        encoding_dim = responses_train.shape[1]
         with self._session.graph.as_default():
 
             def read_batch(contexts, responses):
@@ -171,47 +172,71 @@ class VectorMappingMethod(method.BaselineMethod):
             (contexts_batch_dev,
              responses_batch_dev) = self._dev_iterator.get_next()
 
-            self._weights = tf.get_variable(
-                "weights",
-                dtype=tf.float32, shape=[encoding_dim, encoding_dim],
-                initializer=tf.orthogonal_initializer())
-            responses_mapped_train = responses_batch_train + tf.matmul(
-                responses_batch_train, self._weights)
-            responses_mapped_dev = responses_batch_dev + tf.matmul(
-                responses_batch_dev, self._weights)
-
             # Create the train op.
-            self._create_train_op(contexts_batch_train, responses_mapped_train)
+            self._regularizer = tf.placeholder(dtype=tf.float32, shape=None)
+            self._create_train_op(
+                self._compute_similarities(
+                    contexts_batch_train, responses_batch_train,
+                    is_train=True)
+            )
 
             # Create the accuracy eval metric.
             dev_batch_size = tf.shape(contexts_batch_dev)[0]
+            similarities = self._compute_similarities(
+                contexts_batch_dev, responses_batch_dev,
+                is_train=False)
             self._accuracy = tf.metrics.accuracy(
                 labels=tf.range(dev_batch_size),
-                predictions=tf.argmax(
-                    tf.matmul(
-                        contexts_batch_dev, responses_mapped_dev,
-                        transpose_b=True),
-                    1)
+                predictions=tf.argmax(similarities, 1)
             )
+
+            # Create the inference graph.
+            encoding_dim = int(contexts_batch_train.shape[1])
+            self._fed_context_encodings = tf.placeholder(
+                dtype=tf.float32, shape=[None, encoding_dim]
+            )
+            self._fed_response_encodings = tf.placeholder(
+                dtype=tf.float32, shape=[None, encoding_dim]
+            )
+            self._similarities = self._compute_similarities(
+                self._fed_context_encodings,
+                self._fed_response_encodings
+            )
+
             self._local_init_op = tf.local_variables_initializer()
             self._reset_op = tf.global_variables_initializer()
+            self._saver = tf.train.Saver(max_to_keep=1)
 
-    def _create_train_op(self, contexts_batch_train, responses_mapped_train):
+    def _compute_similarities(self, context_encodings, response_encodings,
+                              is_train=False):
+        with tf.variable_scope("compute_similarities", reuse=(not is_train)):
+            encoding_dim = context_encodings.shape[1]
+            weights = tf.get_variable(
+                "weights",
+                dtype=tf.float32,
+                shape=[encoding_dim, encoding_dim],
+                initializer=tf.orthogonal_initializer(),
+                regularizer=tf.contrib.layers.l2_regularizer(
+                    self._regularizer),
+            )
+            responses_mapped = response_encodings + tf.matmul(
+                response_encodings, weights)
+            return tf.matmul(
+                context_encodings, responses_mapped,
+                transpose_b=True)
+
+    def _create_train_op(self, similarities):
         """Create the train op."""
-        train_batch_size = tf.shape(contexts_batch_train)[0]
-        loss = tf.losses.softmax_cross_entropy(
+        train_batch_size = tf.shape(similarities)[0]
+        tf.losses.softmax_cross_entropy(
             onehot_labels=tf.one_hot(
                 tf.range(train_batch_size), train_batch_size),
             label_smoothing=0.1,
-            logits=tf.matmul(
-                contexts_batch_train, responses_mapped_train,
-                transpose_b=True),
+            logits=similarities,
             reduction=tf.losses.Reduction.MEAN)
         self._learning_rate = tf.placeholder(dtype=tf.float32, shape=None)
-        self._regularizer = tf.placeholder(dtype=tf.float32, shape=None)
-        loss += self._regularizer * tf.reduce_mean(tf.abs(self._weights))
         self._train_op = tf.contrib.training.create_train_op(
-            total_loss=loss,
+            total_loss=tf.losses.get_total_loss(),
             optimizer=tf.train.AdagradOptimizer(
                 learning_rate=self._learning_rate))
 
@@ -220,6 +245,7 @@ class VectorMappingMethod(method.BaselineMethod):
 
         The model that does the best on the dev set will be stored.
         """
+        save_path = tempfile.mkdtemp(prefix="VectorMappingMethod")
 
         def _compute_accuracy():
             self._session.run(self._local_init_op)
@@ -263,7 +289,7 @@ class VectorMappingMethod(method.BaselineMethod):
                         best_accuracy = accuracy
                         best_learning_rate = learning_rate
                         best_regularizer = regularizer
-                        self._weights_value = self._session.run(self._weights)
+                        self._saver.save(self._session, save_path)
                         log_suffix += "*"
 
                     if (best_accuracy_for_run is None
@@ -283,16 +309,22 @@ class VectorMappingMethod(method.BaselineMethod):
                             "No improvement for %i epochs, terminating run.",
                             epochs_since_improvement)
                         break
+
         glog.info(
-            "Best accuracy found was %.2f%%. With learning_rate = %.5f and "
+            "Best accuracy found was %.2f%%, with learning_rate = %.5f and "
             "regularizer = %.5f.",
             best_accuracy * 100,
             best_learning_rate, best_regularizer)
+        self._saver.restore(self._session, save_path)
+        shutil.rmtree(save_path)
 
     def rank_responses(self, contexts, responses):
-        """Rank the responses for each context, using cosine similarity."""
-        contexts_matrix = self._encoder.encode(contexts)
-        responses_matrix = self._encoder.encode(responses)
-        responses_matrix += np.matmul(responses_matrix, self._weights_value)
-        similarities = np.matmul(contexts_matrix, responses_matrix.T)
+        """Rank the responses for each context."""
+        similarities = self._session.run(
+            self._similarities,
+            {
+                self._fed_context_encodings: self._encoder.encode(contexts),
+                self._fed_response_encodings: self._encoder.encode(responses),
+            }
+        )
         return np.argmax(similarities, axis=1)
