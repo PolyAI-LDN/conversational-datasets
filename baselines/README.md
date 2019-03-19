@@ -1,6 +1,8 @@
 
 ```
 
+export TFHUB_CACHE_DIR=/my_module_cache
+
 DATADIR=gs://your-bucket/reddit/YYYYMMDD
 
 python baselines/run_baseline.py  \
