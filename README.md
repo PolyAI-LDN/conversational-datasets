@@ -104,7 +104,7 @@ tensor_dict = iterator.get_next()
 
 ## Getting Started
 
-Conversational datasets are created using [Apache Beam pipeline](https://beam.apache.org/) scripts, run on [Google Dataflow](https://cloud.google.com/dataflow/). This parallelises the data processing pipeline across may worker machines. Apache Beam requires python 2.7, so set up a python 2.7 virtual environment:
+Conversational datasets are created using [Apache Beam pipeline](https://beam.apache.org/) scripts, run on [Google Dataflow](https://cloud.google.com/dataflow/). This parallelises the data processing pipeline across many worker machines. Apache Beam requires python 2.7, so set up a python 2.7 virtual environment:
 
 ```
 python2.7 -m virtualenv venv
@@ -201,4 +201,5 @@ Each pull request is tested in CircleCI - it is first linted with `flake8` and t
 
 * new datasets
 * adaptations to the scripts so they work better in your environment (e.g. other Apache Beam runners, other cloud storage solutions, other example formats)
-* new benchmarks in [`BENCHMARKS.md`](BENCHMARKS.md)
+* results from your methods in the benchmarks [the benchmarks page](BENCHMARKS.md).
+* code for new baselines and improvements to existing baselines
