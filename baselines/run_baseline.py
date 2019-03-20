@@ -4,6 +4,7 @@ For usage see README.md.
 """
 
 import argparse
+import csv
 import enum
 import random
 
@@ -37,6 +38,9 @@ def _parse_args():
     parser.add_argument(
         "--eval_num_batches", type=int, default=500,
         help="Number of batches to use in the evaluation.")
+    parser.add_argument(
+        "--output_file", type=str,
+        help="Optional file to output result as a CSV row.")
     return parser.parse_args()
 
 
@@ -127,11 +131,12 @@ def _evaluate_method(method, recall_k, contexts, responses):
         accuracy_numerator += np.equal(predictions, permutation).mean()
         accuracy_denominator += 1.0
 
+    accuracy = 100 * accuracy_numerator / accuracy_denominator
     glog.info(
         "Final computed 1-of-%i accuracy is %.1f%%",
-        recall_k,
-        100 * accuracy_numerator / accuracy_denominator
+        recall_k, accuracy
     )
+    return accuracy
 
 
 def _load_data(file_pattern, num_examples):
@@ -168,17 +173,7 @@ def _load_data(file_pattern, num_examples):
             "%i examples were requested, but dataset only contains %i.",
             num_examples, len(contexts))
 
-    unique_c, unique_r = [], []
-    seen_contexts = set()
-
-    for context, response in zip(contexts, responses):
-        if context in seen_contexts:
-            continue
-        seen_contexts.add(context)
-        unique_c.append(context)
-        unique_r.append(response)
-
-    return unique_c, unique_r
+    return contexts, responses
 
 
 if __name__ == "__main__":
@@ -195,4 +190,12 @@ if __name__ == "__main__":
         args.test_dataset, args.eval_num_batches * args.recall_k)
 
     glog.info("Running evaluation")
-    _evaluate_method(method, args.recall_k, contexts, responses)
+    accuracy = _evaluate_method(method, args.recall_k, contexts, responses)
+
+    if args.output_file is not None:
+        with open(args.output_file, "a") as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow([
+                args.method, args.train_dataset, args.test_dataset,
+                args.recall_k, accuracy
+            ])
