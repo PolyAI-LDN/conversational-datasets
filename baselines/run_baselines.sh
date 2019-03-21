@@ -22,7 +22,7 @@ for DATASET in reddit os amazon; do
       EVAL_NUM_BATCHES=100
     fi
 
-    echo python baselines/run_baseline.py  \
+    python baselines/run_baseline.py  \
       --method "${METHOD?}" \
       --train_dataset "data/${DATASET?}-train*" \
       --test_dataset "data/${DATASET?}-test*" \
