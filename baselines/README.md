@@ -4,6 +4,8 @@ This directory provides several baseline methods for conversational response sel
 
 Baselines are intended to be relatively fast to run locally, and are not intended to be highly competitive with state of the art methods. As such they are limited to using a small portion of the training set, typically 10 thousand randomly sampled examples.
 
+Note that baselines only use the `context` feature to rank the `response`, and do not take into account `extra_context`s.
+
 
 ## Keyword-based
 

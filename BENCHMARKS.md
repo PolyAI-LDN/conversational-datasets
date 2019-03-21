@@ -1,10 +1,16 @@
+# Benchmark results on conversational response selection
 
-* all results for models using only the `context` feature to select the correct `response`. Models using extra contexts are not reported here (yet)
-* [description of the baseline systems](baselines/README.md)
+This page contains benchmark results for the baselines and other methods on the datasets contained in this repository.
+
+Please feel free to submit the results of your model as a pull request.
+
+All the results are for models using only the `context` feature to select the correct `response`. Models using extra contexts are not reported here (yet).
+
+For a description of the baseline systems, see [`baselines/README.md`](baselines/README.md).
 
 ## Reddit
 
-Running on the data from January 2016 to June 2018 inclusive. This is the dataset used in **citation** .
+These are results on the data from January 2016 to June 2018 inclusive, i.e. the dataset used in **citation** (`TABLE_REGEX="^(201[678]_[01][0-9]|2018_0[1-6])$"`). Results should be similar when training/testing on all reddit data.
 
 
 |         	       | 1-of-100 accuracy 	|
