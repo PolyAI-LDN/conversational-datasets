@@ -33,7 +33,7 @@ where
 
 <img alt="y' is y after a linear mapping" src="https://latex.codecogs.com/svg.latex?%5Cmathbf%7By%7D%27%3D(W%2B%5Calpha%20I)%5Ccdot%5Cmathbf%7By%7D" />
 
-and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"> are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to default to the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha)
+and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"> are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to interpolate with the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha).
 
 The parameters are learned on the training set, using the dot product loss from [Henderson et al 2017](https://arxiv.org/abs/1705.00652). A sweep over learning rate and regularization parameters is performed using a dev set held-out from the training set to select the best model. The final learned parameters are used on the evaluation set.
 
@@ -53,7 +53,7 @@ gsutil cp ${DATADIR?}/train-00001-* data/
 gsutil cp ${DATADIR?}/test-00001-* data/
 ```
 
-For Amazon, you will need to copy two shards of the test set to get enough examples.
+For Amazon QA data, you will need to copy two shards of the test set to get enough examples.
 
 This provides a random subset of the train and test set to use for the baselines. Recall that conversational datasets are always randomly shuffled and sharded.
 
@@ -74,6 +74,6 @@ python baselines/run_baseline.py  \
   --test_dataset data/test-*
 ```
 
-Note that the `USE_LARGE` and `ELMO` baselines are slow, and may benefit from faster hardware.
+Note that the `USE_LARGE` and `ELMO` baselines are slow, and may benefit from faster hardware. For these methods set `--eval_num_batches 100`.
 
 The [`run_baselines.sh`](run_baselines.sh) script runs all the baselines on all the datasets.
