@@ -14,7 +14,7 @@ The `BM25` method builds on top of the tf-idf similarity, applying an adjustment
 
 ## Vector-based
 
-The vector-based methods use publicly available neural network embedding models to embed contexts and responses into a vector space. The currently implemented models are:
+The vector-based methods use publicly available neural network embedding models to embed contexts and responses into a vector space. The models implemented currently are:
 
 * [USE](https://tfhub.dev/google/universal-sentence-encoder/2) - the universal sentence encoder
 * [USE_LARGE](https://tfhub.dev/google/universal-sentence-encoder-large/3) - a larger version of the universal sentence encoder
@@ -25,15 +25,15 @@ all of which are loaded from Tensorflow Hub.
 
 There are two vector-based baseline method, one for each of the above models. The `SIM` method ranks responses according to their cosine similarity with the context vector. This method does not use the training set at all.
 
-The `MAP` method learns a linear mapping on top of the response vector. The final score of a response with vector ![y](https://latex.codecogs.com/svg.latex?\mathbf{y}) given a context with vector ![x](https://latex.codecogs.com/svg.latex?\mathbf{x}) is the cosine similarity of the context vector with the mapped response vector:
+The `MAP` method learns a linear mapping on top of the response vector. The final score of a response with vector <img alt="y" src="https://latex.codecogs.com/svg.latex?\mathbf{y}"> given a context with vector <img alt="x" src="https://latex.codecogs.com/svg.latex?\mathbf{x}"> is the cosine similarity of the context vector with the mapped response vector:
 
-![the cosine similarity of x and y prime](https://latex.codecogs.com/svg.latex?\frac{\mathbf{x}\cdot\mathbf{y}'}{\left\|\mathbf{x}\right\| \left\|\mathbf{y}'\right\|})
+<img alt="the cosine similarity of x and y prime" src="https://latex.codecogs.com/svg.latex?\frac{\mathbf{x}\cdot\mathbf{y}'}{\left\|\mathbf{x}\right\| \left\|\mathbf{y}'\right\|}">
 
 where
 
-![y prime is y after a linear mapping](https://latex.codecogs.com/svg.latex?\mathbf{y}'=(W&plus;\alpha I%29\cdot\mathbf{y})
+<img alt="y' is y after a linear mapping" src="https://latex.codecogs.com/svg.latex?\mathbf{y}'=(W&plus;\alpha I%29\cdot\mathbf{y})" />
 
-and ![W, alpha](https://latex.codecogs.com/svg.latex?W,\:\alpha) are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to default to the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha)
+and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"> are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to default to the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha)
 
 The parameters are learned on the training set, using the dot product loss from [Henderson et al 2017](https://arxiv.org/abs/1705.00652). A sweep over learning rate and regularization parameters is performed using a dev set held-out from the training set to select the best model. The final learned parameters are used on the evaluation set.
 
