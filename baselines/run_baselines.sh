@@ -11,18 +11,23 @@ OUTPUT_FILE=baselines/results.csv
 echo "method, train, test, recall_k, accuracy" > ${OUTPUT_FILE}
 
 # reddit os amazon
-for DATASET in os amazon; do
-  # TF_IDF BM25 USE_SIM USE_MAP
-  for METHOD in ELMO_SIM ELMO_MAP USE_LARGE_SIM USE_LARGE_MAP; do
+for DATASET in reddit os amazon; do
+  for METHOD in TF_IDF BM25 USE_SIM USE_MAP ELMO_SIM ELMO_MAP USE_LARGE_SIM USE_LARGE_MAP; do
 
     echo "Running ${METHOD} method on ${DATASET} data."
 
-    python baselines/run_baseline.py  \
+    EVAL_NUM_BATCHES=500
+    if [[ "$METHOD" == USE_LARGE*  ]] || [[ "$METHOD" == ELMO*  ]]; then
+      # These models are slow, so reduce the number of eval batches.
+      EVAL_NUM_BATCHES=100
+    fi
+
+    echo python baselines/run_baseline.py  \
       --method "${METHOD?}" \
       --train_dataset "data/${DATASET?}-train*" \
       --test_dataset "data/${DATASET?}-test*" \
       --output_file "${OUTPUT_FILE?}" \
-      --eval_num_batches 100
+      --eval_num_batches "${EVAL_NUM_BATCHES?}"
 
   done
 
