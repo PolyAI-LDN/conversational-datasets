@@ -2,7 +2,7 @@
 
 This directory provides several baseline methods for conversational response selection. These help to benchmark the performance on the various datasets.
 
-Baselines are intended to be relatively fast to run locally, and are not intended to be highly competitive with state of the art methods. As such they are limited to using a small portion of the training set, typically 10 thousand randomly sampled examples.
+Baselines are intended to be relatively fast to run locally, and are not intended to be highly competitive with state of the art methods. As such they are limited to using a small portion of the training set, typically ten thousand randomly sampled examples.
 
 Note that baselines only use the `context` feature to rank the `response`, and do not take into account `extra_context`s.
 
@@ -37,19 +37,19 @@ where
 
 and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"> are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to interpolate with the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha).
 
-The parameters are learned on the training set, using the dot product loss from [Henderson et al 2017](https://arxiv.org/abs/1705.00652). A sweep over learning rate and regularization parameters is performed using a dev set held-out from the training set to select the best model. The final learned parameters are used on the evaluation set.
+The parameters are learned on the training set, using the dot product loss from [Henderson et al 2017](https://arxiv.org/abs/1705.00652). A sweep over learning rate and regularization parameters is performed using a held-out dev set. The final learned parameters are used on the evaluation set.
 
-The combination of the 3 embedding models with the 2 vector-based methods gives 6 baseline methods: `USE_SIM`, `USE_MAP`, `USE_LARGE_SIM`, `USE_LARGE_MAP`, `ELMO_SIM`, and `ELMO_MAP`.
+The combination of the three embedding models with the two vector-based methods gives six baseline methods: `USE_SIM`, `USE_MAP`, `USE_LARGE_SIM`, `USE_LARGE_MAP`, `ELMO_SIM`, and `ELMO_MAP`.
 
 # Running the baselines
 
 ## Copy the data locally
 
-Before running the baselines, it may be beneficial to copy the data locally. This will speed up reading the data, but note it is not necessary if you run these on a google cloud machine in the correct region.
+Before running the baselines, it may be beneficial to copy the data locally. This will speed up reading the data, but it is not necessary if you run these on a Google cloud machine in the correct region.
 
-If the dataset is stored in `$DATADIR`, a google cloud storage path such as `gs://your-bucket/reddit/YYYYMMDD`, then copy a shard of the training set and the test set:
+If the dataset is stored in `$DATADIR`, a Google cloud storage path such as `gs://your-bucket/reddit/YYYYMMDD`, then copy a shard of the training set and the test set:
 
-```
+```bash
 mkdir data
 gsutil cp ${DATADIR?}/train-00001-* data/
 gsutil cp ${DATADIR?}/test-00001-* data/
@@ -63,13 +63,13 @@ This provides a random subset of the train and test set to use for the baselines
 
 When running vector-based methods, make use of tensorflow hub's caching to speed up results:
 
-```
+```bash
 export TFHUB_CACHE_DIR=~/.tfhub_cache
 ```
 
 Then run an individual baseline with:
 
-```
+```bash
 python baselines/run_baseline.py  \
   --method TF_IDF \
   --train_dataset data/train-* \
