@@ -27,11 +27,11 @@ There are two vector-based baseline method, one for each of the above models. Th
 
 The `MAP` method learns a linear mapping on top of the response vector. The final score of a response with vector <img alt="y" src="https://latex.codecogs.com/svg.latex?\mathbf{y}"> given a context with vector <img alt="x" src="https://latex.codecogs.com/svg.latex?\mathbf{x}"> is the cosine similarity of the context vector with the mapped response vector:
 
-<img alt="the cosine similarity of x and y prime" src="https://latex.codecogs.com/svg.latex?\frac{\mathbf{x}\cdot\mathbf{y}'}{\left\|\mathbf{x}\right\| \left\|\mathbf{y}'\right\|}">
+<img alt="the cosine similarity of x and y prime" src="https://latex.codecogs.com/svg.latex?%5Cfrac%7B%5Cmathbf%7Bx%7D%5Ccdot%5Cmathbf%7By%7D%27%7D%7B%5Cleft%5C%7C%5Cmathbf%7Bx%7D%5Cright%5C%7C%20%5Cleft%5C%7C%5Cmathbf%7By%7D%27%5Cright%5C%7C%7D">
 
 where
 
-<img alt="y' is y after a linear mapping" src="https://latex.codecogs.com/svg.latex?\mathbf{y}'=(W&plus;\alpha I%29\cdot\mathbf{y})" />
+<img alt="y' is y after a linear mapping" src="https://latex.codecogs.com/svg.latex?%5Cmathbf%7By%7D%27%3D(W%2B%5Calpha%20I)%5Ccdot%5Cmathbf%7By%7D" />
 
 and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"> are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to default to the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha)
 
