@@ -14,7 +14,7 @@ The `BM25` method builds on top of the tf-idf similarity, applying an adjustment
 
 ## Vector-based
 
-Vector-based methods use publicly available neural network embedding models to embed contexts and responses into a vector space. The currently implemented models are:
+The vector-based methods use publicly available neural network embedding models to embed contexts and responses into a vector space. The currently implemented models are:
 
 * [USE](https://tfhub.dev/google/universal-sentence-encoder/2) - the universal sentence encoder
 * [USE_LARGE](https://tfhub.dev/google/universal-sentence-encoder-large/3) - a larger version of the universal sentence encoder
@@ -23,40 +23,57 @@ Vector-based methods use publicly available neural network embedding models to e
 all of which are loaded from Tensorflow Hub.
 
 
-There are two vector-based baseline method, one for each of the above models. The `SIM` method ranks responses according to their cosine similarity with the context vector. This method does not use the training set at all. The `MAP` method learns a linear mapping on top of the response vector. The final score of a response with vector ![https://latex.codecogs.com/svg.latex?\mathbf{y}] given a context with vector ![https://latex.codecogs.com/svg.latex?\mathbf{x}] is:
+There are two vector-based baseline method, one for each of the above models. The `SIM` method ranks responses according to their cosine similarity with the context vector. This method does not use the training set at all.
 
-![https://latex.codecogs.com/gif.latex?\mathbf{x}&space;\cdot&space;\frac{&space;\mathbf{y}'}{&space;\left&space;\|&space;\mathbf{y}'&space;\right&space;\|}]
+The `MAP` method learns a linear mapping on top of the response vector. The final score of a response with vector ![y](https://latex.codecogs.com/svg.latex?\mathbf{y}) given a context with vector ![x](https://latex.codecogs.com/svg.latex?\mathbf{x}) is the cosine similarity of the context vector with the mapped response vector:
+
+![the cosine similarity of x and y prime](https://latex.codecogs.com/svg.latex?\frac{\mathbf{x}\cdot\mathbf{y}'}{\left\|\mathbf{x}\right\| \left\|\mathbf{y}'\right\|})
 
 where
 
-![https://latex.codecogs.com/gif.latex?\mathbf{y}'&space;=(W&space;&plus;&space;\alpha&space;I)&space;\cdot&space;\mathbf{y}]
+![y prime is y after a linear mapping](https://latex.codecogs.com/svg.latex?\mathbf{y}'=(W&plus;\alpha I%29\cdot\mathbf{y})
 
+and ![W, alpha](https://latex.codecogs.com/svg.latex?W,\:\alpha) are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to default to the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha)
 
+The parameters are learned on the training set, using the dot product loss from [Henderson et al 2017](https://arxiv.org/abs/1705.00652). A sweep over learning rate and regularization parameters is performed using a dev set held-out from the training set to select the best model. The final learned parameters are used on the evaluation set.
+
+The combination of the 3 embedding models with the 2 vector-based methods give the 6 baseline methods: `USE_SIM`, `USE_MAP`, `USE_LARGE_SIM`, `USE_LARGE_MAP`, `ELMO_SIM`, and `ELMO_MAP`.
 
 # Running the baselines
 
 ## Copy the data locally
 
+Before running the baselines, it may be beneficial to copy the data locally. This will speed up reading the data, but note it is not necessary if you run these on a google cloud machine in the correct region.
+
+If the dataset is stored in `DATADIR`, a google cloud storage path such as `gs://your-bucket/reddit/YYYYMMDD`, then copy a shard of the training set and the test set:
 
 ```
-# Copy a random sample of the data locally.
 mkdir data
 gsutil cp ${DATADIR?}/train-00001-* data/
 gsutil cp ${DATADIR?}/test-00001-* data/
-
 ```
 
 For Amazon, you will need to copy two shards of the test set to get enough examples.
 
+This provides a random subset of the train and test set to use for the baselines. Recall that conversational datasets are always randomly shuffled and sharded.
+
 ## Run the baselines
+
+When running vector-based methods, make use of tensorflow hub's caching to speed up results:
 
 ```
 export TFHUB_CACHE_DIR=~/.tfhub_cache
+```
 
+Then run an individual baseline with:
+
+```
 python baselines/run_baseline.py  \
-  --method BM25 \
+  --method TF_IDF \
   --train_dataset data/train-* \
   --test_dataset data/test-*
 ```
 
-[`run_baselines.sh`](run_baselines.sh)
+Note that the `USE_LARGE` and `ELMO` baselines are slow, and may benefit from faster hardware.
+
+The [`run_baselines.sh`](run_baselines.sh) script runs all the baselines on all the datasets.
