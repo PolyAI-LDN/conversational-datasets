@@ -132,10 +132,6 @@ def _evaluate_method(method, recall_k, contexts, responses):
         accuracy_denominator += 1.0
 
     accuracy = 100 * accuracy_numerator / accuracy_denominator
-    glog.info(
-        "Final computed 1-of-%i accuracy is %.1f%%",
-        recall_k, accuracy
-    )
     return accuracy
 
 
@@ -191,6 +187,10 @@ if __name__ == "__main__":
 
     glog.info("Running evaluation")
     accuracy = _evaluate_method(method, args.recall_k, contexts, responses)
+    glog.info(
+        "Final computed 1-of-%i accuracy is %.1f%%",
+        args.recall_k, accuracy
+    )
 
     if args.output_file is not None:
         with open(args.output_file, "a") as f:
