@@ -13,7 +13,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from baselines import tf_idf, vector_based
+from baselines import keyword_based, vector_based
 
 
 def _parse_args():
@@ -62,9 +62,9 @@ class Method(enum.Enum):
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
         if self == self.TF_IDF:
-            return tf_idf.TfIdfMethod(apply_bm25_transform=False)
+            return keyword_based.TfIdfMethod()
         elif self == self.BM25:
-            return tf_idf.TfIdfMethod(apply_bm25_transform=True)
+            return keyword_based.BM25Method()
         elif self == self.USE_SIM:
             return vector_based.VectorSimilarityMethod(
                 encoder=vector_based.TfHubEncoder(

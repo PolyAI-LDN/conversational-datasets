@@ -2,30 +2,27 @@
 
 import numpy as np
 import scipy.sparse as sp
-from sklearn.feature_extraction.text import (TfidfVectorizer,
+from sklearn.feature_extraction.text import (HashingVectorizer,
+                                             TfidfTransformer, TfidfVectorizer,
                                              _document_frequency)
 
 from baselines import method
 
 
-class TfIdfMethod(method.BaselineMethod):
-    """TF-IDF and BM25 baselines, using weighted keyword matching.
+class BM25Method(method.BaselineMethod):
+    """BM25 baseline, using weighted keyword matching.
 
     Adapted from https://github.com/arosh/BM25Transformer/blob/master/bm25.py
     see Okapi BM25: a non-binary model - Introduction to Information Retrieval
     http://nlp.stanford.edu/IR-book/html/htmledition/okapi-bm25-a-non-binary-model-1.html
 
     Args:
-        apply_bm25_transform: boolean - whether to apply the bm25
-            transformation on top of tf-idf. If False, this is just the TF-IDF
-            baseline method.
         k1: float, optional (default=2.0)
         b: float, optional (default=0.75)
 
     """
-    def __init__(self, apply_bm25_transform=False, k1=2.0, b=0.75):
-        """Create a new `TfIdfMethod` object."""
-        self._apply_bm25_transform = apply_bm25_transform
+    def __init__(self, k1=2.0, b=0.75):
+        """Create a new `BM25Method` object."""
         self._k1 = k1
         self._b = b
 
@@ -33,9 +30,6 @@ class TfIdfMethod(method.BaselineMethod):
         """Fit the tf-idf transform and compute idf statistics."""
         self._vectorizer = TfidfVectorizer()
         count_matrix = self._vectorizer.fit_transform(contexts + responses)
-        if not self._apply_bm25_transform:
-            return
-
         n_samples, n_features = count_matrix.shape
         df = _document_frequency(count_matrix)
         idf = np.log((n_samples - df + 0.5) / (df + 0.5))
@@ -50,9 +44,6 @@ class TfIdfMethod(method.BaselineMethod):
         tf_idf_vectors = self._vectorizer.transform(strings)
         tf_idf_vectors = sp.csr_matrix(
             tf_idf_vectors, dtype=np.float64, copy=True)
-
-        if not self._apply_bm25_transform:
-            return tf_idf_vectors
 
         # Document length (number of terms) in each row
         # Shape is (n_samples, 1)
@@ -77,6 +68,34 @@ class TfIdfMethod(method.BaselineMethod):
         vectors = vectors * self._idf_diag
 
         return vectors
+
+    def rank_responses(self, contexts, responses):
+        """Rank the responses for each context."""
+        contexts_matrix = self._vectorize(contexts)
+        responses_matrix = self._vectorize(responses)
+        similarities = contexts_matrix.dot(responses_matrix.T).toarray()
+        return np.argmax(similarities, axis=1)
+
+
+class TfIdfMethod(method.BaselineMethod):
+    """TF-IDF baseline.
+
+    This hashes words to sparse IDs, and then computes tf-idf statistics for
+    these hashed IDs. As a result, no words are considered out-of-vocabulary.
+    """
+    def train(self, contexts, responses):
+        """Fit the tf-idf transform and compute idf statistics."""
+        self._vectorizer = HashingVectorizer()
+        self._tfidf_transform = TfidfTransformer()
+        self._tfidf_transform.fit_transform(
+            self._vectorizer.transform(contexts + responses))
+
+    def _vectorize(self, strings):
+        """Vectorize the given strings."""
+        tf_idf_vectors = self._tfidf_transform.transform(
+            self._vectorizer.transform(strings))
+        return sp.csr_matrix(
+            tf_idf_vectors, dtype=np.float64, copy=True)
 
     def rank_responses(self, contexts, responses):
         """Rank the responses for each context."""
