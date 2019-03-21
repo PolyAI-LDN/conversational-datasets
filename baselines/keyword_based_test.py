@@ -1,14 +1,14 @@
-"""Tests for tf_idf.py."""
+"""Tests for keyword_based.py."""
 
 import unittest
 
-from baselines import tf_idf
+from baselines import keyword_based
 
 
 class TfIdfMethodTest(unittest.TestCase):
     def test_train_test(self):
         """Check that it can correctly rank a simple example."""
-        method = tf_idf.TfIdfMethod(apply_bm25_transform=False)
+        method = keyword_based.TfIdfMethod()
         method.train(
             ["hello how are you", "hello how are"],
             ["hello how", "hello"]
@@ -24,7 +24,7 @@ class TfIdfMethodTest(unittest.TestCase):
 
     def test_train_test_idf(self):
         """Check that the keyword with higher idf counts for more."""
-        method = tf_idf.TfIdfMethod(apply_bm25_transform=False)
+        method = keyword_based.TfIdfMethod()
         method.train(
             ["hello how are you", "hello how are"],
             ["hello how", "hello"]
@@ -38,9 +38,11 @@ class TfIdfMethodTest(unittest.TestCase):
             [1, 1]  # you is more informative than 'hello'.
         )
 
+
+class BM25MethodTest(unittest.TestCase):
     def test_train_test_bm25(self):
         """Check that bm25 can correctly rank a simple example."""
-        method = tf_idf.TfIdfMethod(apply_bm25_transform=True)
+        method = keyword_based.BM25Method()
         method.train(
             ["hello how are you", "hello how are"],
             ["hello how", "hello"]
