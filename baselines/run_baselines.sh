@@ -8,7 +8,7 @@ if [ "$TFHUB_CACHE_DIR" = "" ]; then
 fi
 
 OUTPUT_FILE=baselines/results.csv
-echo "method, train, test, recall_k, accuracy" > ${OUTPUT_FILE}
+echo "method, train, test, train_size, test_size, recall_k, accuracy" > ${OUTPUT_FILE}
 
 # reddit os amazon
 for DATASET in reddit os amazon; do
