@@ -1,6 +1,6 @@
 
 * all results for models using only the `context` feature to select the correct `response`. Models using extra contexts are not reported here (yet)
-* (description of the baseline systems)[baselines/README.md]
+* [description of the baseline systems](baselines/README.md)
 
 ## Reddit
 
@@ -10,7 +10,7 @@ Running on the data from January 2016 to June 2018 inclusive. This is the datase
 |         	       | 1-of-100 accuracy 	|
 | :---             | :---:	            |
 | **Baselines**    |                    |         	
-| TF_IDF           | 22.5%             	|
+| TF_IDF           | 26.7%             	|
 | BM25        	   | 23.5%             	|
 | USE_SIM        	 | 36.8%             	|
 | USE_MAP        	 | 41.1%             	|
@@ -27,7 +27,7 @@ Running on the data from January 2016 to June 2018 inclusive. This is the datase
 |         	       | 1-of-100 accuracy 	|
 | :---             | :---:	            |
 | **Baselines**    |                    |         	
-| TF_IDF           | 9.9%             	|
+| TF_IDF           | 10.9%             	|
 | BM25        	   | 9.9%             	|
 | USE_SIM        	 | 13.6%             	|
 | USE_MAP        	 | 15.8%             	|
@@ -44,7 +44,7 @@ Running on the data from January 2016 to June 2018 inclusive. This is the datase
 |         	       | 1-of-100 accuracy 	|
 | :---             | :---:	            |
 | **Baselines**    |                    |         	
-| TF_IDF           | 49.8%             	|
+| TF_IDF           | 51.8%             	|
 | BM25        	   | 50.2%             	|
 | USE_SIM        	 | 47.6%             	|
 | USE_MAP        	 | 54.4%             	|
