@@ -9,14 +9,14 @@ Note that baselines only use the `context` feature to rank the `response`, and d
 
 ## Keyword-based
 
-The keyword-based baselines use keyword similarity metrics to rank responses given a context. The `TF_IDF` method computes inverse document frequency statistics on the training set. Responses are scored using their [tf-idf cosine similarity](https://janav.wordpress.com/2013/10/27/tf-idf-and-cosine-similarity/) to the context.
+The [keyword-based baselines](keyword_based.py) use keyword similarity metrics to rank responses given a context. The `TF_IDF` method computes inverse document frequency statistics on the training set. Responses are scored using their [tf-idf cosine similarity](https://janav.wordpress.com/2013/10/27/tf-idf-and-cosine-similarity/) to the context.
 
 The `BM25` method builds on top of the tf-idf similarity, applying an adjustment to the term weights. See [Okapi BM25: a non-binary model](http://nlp.stanford.edu/IR-book/html/htmledition/okapi-bm25-a-non-binary-model-1.html) for further discussion of the approach.
 
 
 ## Vector-based
 
-The vector-based methods use publicly available neural network embedding models to embed contexts and responses into a vector space. The models implemented currently are:
+The [vector-based methods](vector_based.py) use publicly available neural network embedding models to embed contexts and responses into a vector space. The models implemented currently are:
 
 * [USE](https://tfhub.dev/google/universal-sentence-encoder/2) - the universal sentence encoder
 * [USE_LARGE](https://tfhub.dev/google/universal-sentence-encoder-large/3) - a larger version of the universal sentence encoder
@@ -25,7 +25,7 @@ The vector-based methods use publicly available neural network embedding models 
 all of which are loaded from Tensorflow Hub.
 
 
-There are two vector-based baseline method, one for each of the above models. The `SIM` method ranks responses according to their cosine similarity with the context vector. This method does not use the training set at all.
+There are two vector-based baseline methods, one for each of the above models. The `SIM` method ranks responses according to their cosine similarity with the context vector. This method does not use the training set at all.
 
 The `MAP` method learns a linear mapping on top of the response vector. The final score of a response with vector <img alt="y" src="https://latex.codecogs.com/svg.latex?\mathbf{y}"> given a context with vector <img alt="x" src="https://latex.codecogs.com/svg.latex?\mathbf{x}"> is the cosine similarity of the context vector with the mapped response vector:
 
@@ -39,7 +39,7 @@ and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"
 
 The parameters are learned on the training set, using the dot product loss from [Henderson et al 2017](https://arxiv.org/abs/1705.00652). A sweep over learning rate and regularization parameters is performed using a dev set held-out from the training set to select the best model. The final learned parameters are used on the evaluation set.
 
-The combination of the 3 embedding models with the 2 vector-based methods give the 6 baseline methods: `USE_SIM`, `USE_MAP`, `USE_LARGE_SIM`, `USE_LARGE_MAP`, `ELMO_SIM`, and `ELMO_MAP`.
+The combination of the 3 embedding models with the 2 vector-based methods gives 6 baseline methods: `USE_SIM`, `USE_MAP`, `USE_LARGE_SIM`, `USE_LARGE_MAP`, `ELMO_SIM`, and `ELMO_MAP`.
 
 # Running the baselines
 
@@ -47,7 +47,7 @@ The combination of the 3 embedding models with the 2 vector-based methods give t
 
 Before running the baselines, it may be beneficial to copy the data locally. This will speed up reading the data, but note it is not necessary if you run these on a google cloud machine in the correct region.
 
-If the dataset is stored in `DATADIR`, a google cloud storage path such as `gs://your-bucket/reddit/YYYYMMDD`, then copy a shard of the training set and the test set:
+If the dataset is stored in `$DATADIR`, a google cloud storage path such as `gs://your-bucket/reddit/YYYYMMDD`, then copy a shard of the training set and the test set:
 
 ```
 mkdir data
