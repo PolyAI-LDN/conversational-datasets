@@ -50,7 +50,7 @@ http://opus.nlpl.eu/download.php?f=OpenSubtitles/v2018/mono/OpenSubtitles.raw.en
 
 Extract the data, split it into shards, and upload the data to your Google cloud storage bucket:
 
-```
+```bash
 gunzip -k en.txt.gz
 mkdir lines
 split -a 3 -l 100000 en.txt lines/lines-
@@ -67,7 +67,7 @@ computed using the file names.
 Now you can run the dataflow script to read the text files and generate
 conversational examples:
 
-```
+```bash
 PROJECT="your-google-cloud-project"
 
 DATADIR="gs://${BUCKET?}/opensubtitles/$(date +"%Y%m%d")"
@@ -91,7 +91,7 @@ The dataset will be saved in the `$DATADIR` directory, as sharded train and test
 
 You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
-```
+```bash
 python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00100.tfrecords
 ```
 

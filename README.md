@@ -14,7 +14,7 @@ This repository provides tools to create reproducible datasets for training and 
 
 Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets, and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
 
-Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets, with deterministic train/test splits, that can be used to define reproducible evaluations in research papers.
+Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets, with deterministic train/test splits, which can be used to define reproducible evaluations in research papers.
 
 ## Benchmarks
 
@@ -106,7 +106,7 @@ tensor_dict = iterator.get_next()
 
 Conversational datasets are created using [Apache Beam pipeline](https://beam.apache.org/) scripts, run on [Google Dataflow](https://cloud.google.com/dataflow/). This parallelises the data processing pipeline across many worker machines. Apache Beam requires python 2.7, so set up a python 2.7 virtual environment:
 
-```
+```bash
 python2.7 -m virtualenv venv
 . venv/bin/activate
 pip install -r requirements.txt
@@ -116,7 +116,7 @@ The Dataflow scripts write conversational datasets to Google cloud storage, so y
 
 Lastly, you will need to [set up authentication](https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
 
-```
+```bash
 export GOOGLE_APPLICATION_CREDENTIALS={{json file key location}}
 ```
 
@@ -141,7 +141,7 @@ However when publishing results, we encourage you to include the
 1-of-100 ranking accuracy, which is becoming a research community standard.
 
 The 1-of-100 ranking accuracy is a *Recall@k* metric. In general *Recall@k*
-takes *N* responses to the given conversational context, where only one response is relevant, it indicates whether the relevant response occurs in the top *k* ranked candidate responses.
+takes *N* responses to the given conversational context, where only one response is relevant. It indicates whether the relevant response occurs in the top *k* ranked candidate responses.
 The 1-of-100 metric is obtained when *k=1* and *N=100*.
 This effectively means that for each query, we indicate if the correct response is the top ranked response among 100 candidates. The final score is the average across all queries.
 

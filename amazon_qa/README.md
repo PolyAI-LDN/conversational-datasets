@@ -34,7 +34,7 @@ Below are instructions for how to generate the Amazon QA conversational dataset.
 
 First you must download the input data from http://jmcauley.ucsd.edu/data/amazon/qa/. In total there are 38 `.json.gz` files to download. Unzip them all and copy them to your Google cloud storage bucket:
 
-```
+```bash
 gunzip *
 
 BUCKET="your-bucket"
@@ -49,7 +49,7 @@ JSON, but rather python dictionaries in string format.
 Run the following command to process the raw input data into a conversational
 dataset:
 
-```
+```bash
 PROJECT="your-google-cloud-project"
 
 DATADIR="gs://${BUCKET?}/amazon_qa/$(date +"%Y%m%d")"
@@ -72,7 +72,7 @@ The dataset will be saved in the `$DATADIR` directory, as sharded train and test
 
 You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
-```
+```bash
 python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00010.tfrecords
 ```
 

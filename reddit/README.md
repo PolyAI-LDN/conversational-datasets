@@ -61,14 +61,14 @@ First, [install the bq command-line tool](https://cloud.google.com/bigquery/docs
 
 Ensure you have a BigQuery dataset to write the table to:
 
-```
+```bash
 DATASET="data"
 bq mk --dataset ${DATASET?}
 ```
 
 Write a new table by querying the public reddit data:
 
-```
+```bash
 TABLE=reddit
 
 # For all data from January 2016 to June 2018.
@@ -99,7 +99,7 @@ The data from January 2016 to June 2018 was used in ** insert paper reference **
 
 Now you can run the Dataflow script:
 
-```
+```bash
 PROJECT="your-google-cloud-project"
 BUCKET="your-bucket"
 
@@ -127,7 +127,7 @@ The dataset will be saved in the `$DATADIR` directory, as sharded train and test
 
 You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
-```
+```bash
 python tools/tfrutil.py pp ${DATADIR?}/train-00999-of-01000.tfrecords
 ```
 
