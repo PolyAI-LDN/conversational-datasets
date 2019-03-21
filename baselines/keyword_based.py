@@ -1,4 +1,4 @@
-"""Baseline response ranking method using keyword matching (TF-IDF and BM25)"""
+"""Baseline response ranking methods using keyword matching."""
 
 import numpy as np
 import scipy.sparse as sp

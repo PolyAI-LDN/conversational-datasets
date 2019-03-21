@@ -132,10 +132,6 @@ def _evaluate_method(method, recall_k, contexts, responses):
         accuracy_denominator += 1.0
 
     accuracy = 100 * accuracy_numerator / accuracy_denominator
-    glog.info(
-        "Final computed 1-of-%i accuracy is %.1f%%",
-        recall_k, accuracy
-    )
     return accuracy
 
 
@@ -180,22 +176,29 @@ if __name__ == "__main__":
     args = _parse_args()
     method = args.method.to_method_object()
     glog.info("Loading training data")
-    contexts, responses = _load_data(args.train_dataset, args.train_size)
+    contexts_train, responses_train = _load_data(
+        args.train_dataset, args.train_size)
 
     glog.info("Training %s method", args.method)
-    method.train(contexts, responses)
+    method.train(contexts_train, responses_train)
 
     glog.info("Loading test data")
-    contexts, responses = _load_data(
+    contexts_test, responses_test = _load_data(
         args.test_dataset, args.eval_num_batches * args.recall_k)
 
     glog.info("Running evaluation")
-    accuracy = _evaluate_method(method, args.recall_k, contexts, responses)
+    accuracy = _evaluate_method(
+        method, args.recall_k, contexts_test, responses_test)
+    glog.info(
+        "Final computed 1-of-%i accuracy is %.1f%%",
+        args.recall_k, accuracy
+    )
 
     if args.output_file is not None:
         with open(args.output_file, "a") as f:
             csv_writer = csv.writer(f)
             csv_writer.writerow([
                 args.method, args.train_dataset, args.test_dataset,
+                len(contexts_train), len(contexts_test),
                 args.recall_k, accuracy
             ])
