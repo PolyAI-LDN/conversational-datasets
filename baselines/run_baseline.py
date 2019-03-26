@@ -41,6 +41,10 @@ def _parse_args():
     parser.add_argument(
         "--output_file", type=str,
         help="Optional file to output result as a CSV row.")
+    parser.add_argument(
+        "--deduplicate_eval", default=False, action="store_true",
+        help="If set, the evaluation will de-duplicate examples with "
+             "identical contexts.")
     return parser.parse_args()
 
 
@@ -135,10 +139,11 @@ def _evaluate_method(method, recall_k, contexts, responses):
     return accuracy
 
 
-def _load_data(file_pattern, num_examples):
+def _load_data(file_pattern, num_examples, deduplicate=False):
     """Load contexts and responses from the given conversational dataset."""
     contexts = []
     responses = []
+    seen_contexts = set()
     complete = False
     with tqdm(total=num_examples) as progress_bar:
         file_names = tf.gfile.Glob(file_pattern)
@@ -151,12 +156,16 @@ def _load_data(file_pattern, num_examples):
             for record in tf.python_io.tf_record_iterator(file_name):
                 example = tf.train.Example()
                 example.ParseFromString(record)
-                contexts.append(
-                    example.features.feature[
-                        'context'].bytes_list.value[0].decode("utf-8"))
-                responses.append(
-                    example.features.feature[
-                        'response'].bytes_list.value[0].decode("utf-8"))
+                context = example.features.feature[
+                    'context'].bytes_list.value[0].decode("utf-8")
+                if deduplicate and context in seen_contexts:
+                    continue
+                if deduplicate:
+                    seen_contexts.add(context)
+                contexts.append(context)
+                response = example.features.feature[
+                    'response'].bytes_list.value[0].decode("utf-8")
+                responses.append(response)
                 progress_bar.update(1)
                 if len(contexts) >= num_examples:
                     complete = True
@@ -184,7 +193,8 @@ if __name__ == "__main__":
 
     glog.info("Loading test data")
     contexts_test, responses_test = _load_data(
-        args.test_dataset, args.eval_num_batches * args.recall_k)
+        args.test_dataset, args.eval_num_batches * args.recall_k,
+        deduplicate=args.deduplicate_eval)
 
     glog.info("Running evaluation")
     accuracy = _evaluate_method(
