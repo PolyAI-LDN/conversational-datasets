@@ -17,7 +17,7 @@ These are results on the data from January 2016 to June 2018 inclusive, i.e. the
 | :---             | :---:	            |
 | **Baselines**    |                    |         	
 | TF_IDF           | 26.7%             	|
-| BM25        	   | 23.5%             	|
+| BM25        	   | 27.6%             	|
 | USE_SIM        	 | 36.8%             	|
 | USE_MAP        	 | 41.1%             	|
 | USE_LARGE_SIM    | 41.1%             	|
@@ -34,7 +34,7 @@ These are results on the data from January 2016 to June 2018 inclusive, i.e. the
 | :---             | :---:	            |
 | **Baselines**    |                    |         	
 | TF_IDF           | 10.9%             	|
-| BM25        	   | 9.9%             	|
+| BM25        	   | 10.9%             	|
 | USE_SIM        	 | 13.6%             	|
 | USE_MAP        	 | 15.8%             	|
 | USE_LARGE_SIM    | 14.9%             	|
@@ -51,7 +51,7 @@ These are results on the data from January 2016 to June 2018 inclusive, i.e. the
 | :---             | :---:	            |
 | **Baselines**    |                    |         	
 | TF_IDF           | 51.8%             	|
-| BM25        	   | 50.2%             	|
+| BM25        	   | 52.3%             	|
 | USE_SIM        	 | 47.6%             	|
 | USE_MAP        	 | 54.4%             	|
 | USE_LARGE_SIM    | 51.3%             	|

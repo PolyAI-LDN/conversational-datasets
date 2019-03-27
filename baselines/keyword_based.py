@@ -3,8 +3,9 @@
 import numpy as np
 import scipy.sparse as sp
 from sklearn.feature_extraction.text import (HashingVectorizer,
-                                             TfidfTransformer, TfidfVectorizer,
+                                             TfidfTransformer,
                                              _document_frequency)
+from sklearn.utils.testing import ignore_warnings
 
 from baselines import method
 
@@ -28,8 +29,12 @@ class BM25Method(method.BaselineMethod):
 
     def train(self, contexts, responses):
         """Fit the tf-idf transform and compute idf statistics."""
-        self._vectorizer = TfidfVectorizer()
-        count_matrix = self._vectorizer.fit_transform(contexts + responses)
+        with ignore_warnings():
+            # Ignore deprecated `non_negative` warning.
+            self._vectorizer = HashingVectorizer(non_negative=True)
+        self._tfidf_transform = TfidfTransformer()
+        count_matrix = self._tfidf_transform.fit_transform(
+            self._vectorizer.transform(contexts + responses))
         n_samples, n_features = count_matrix.shape
         df = _document_frequency(count_matrix)
         idf = np.log((n_samples - df + 0.5) / (df + 0.5))
@@ -38,10 +43,14 @@ class BM25Method(method.BaselineMethod):
         )
         document_lengths = count_matrix.sum(axis=1)
         self._average_document_length = np.mean(document_lengths)
+        print(self._average_document_length)
 
     def _vectorize(self, strings):
         """Vectorize the given strings."""
-        tf_idf_vectors = self._vectorizer.transform(strings)
+        with ignore_warnings():
+            # Ignore deprecated `non_negative` warning.
+            tf_idf_vectors = self._tfidf_transform.transform(
+                self._vectorizer.transform(strings))
         tf_idf_vectors = sp.csr_matrix(
             tf_idf_vectors, dtype=np.float64, copy=True)
 
@@ -87,7 +96,7 @@ class TfIdfMethod(method.BaselineMethod):
         """Fit the tf-idf transform and compute idf statistics."""
         self._vectorizer = HashingVectorizer()
         self._tfidf_transform = TfidfTransformer()
-        self._tfidf_transform.fit_transform(
+        self._tfidf_transform.fit(
             self._vectorizer.transform(contexts + responses))
 
     def _vectorize(self, strings):
