@@ -11,27 +11,6 @@ The train / test split is deterministic based on the thread ID. As long as all t
 
 ## Statistics
 
-### January 2016 to June 2018
-
-Below are some statistics of the dataset generated using the comments from
-January 2016 to June 2018 (`TABLE_REGEX="^(201[678]_[01][0-9]|2018_0[1-6])$"`):
-
-
-* Number of comments: 2,345,492,566
-* Number of threads: 163,848,991
-* Number of tensorflow examples: 462,796,822
-* Train set size: 416,606,697
-* Test set size: 46,190,125
-
-Typical metrics for the Dataflow job:
-
-* Total vCPU time:  412.511 vCPU hr
-* Total memory time: 1,547.109 GB hr
-* Total persistent disk time: 103,140.598 GB hr
-* Elapsed time: 1h 4m (409 workers)
-
-### Up to 2019
-
 Below are some statistics of the dataset generated using the comments from
 up to 2019 (`TABLE_REGEX="^201[5678]_[01][0-9]$")`):
 
@@ -71,9 +50,6 @@ Write a new table by querying the public reddit data:
 ```bash
 TABLE=reddit
 
-# For all data from January 2016 to June 2018.
-TABLE_REGEX="^(201[678]_[01][0-9]|2018_0[1-6])$"
-
 # For all data up to 2019.
 TABLE_REGEX="^201[5678]_[01][0-9]$"
 
@@ -89,8 +65,6 @@ echo "${QUERY?}" | bq query \
   --destination_table ${DATASET?}.${TABLE?} \
   --use_legacy_sql=true
 ```
-
-The data from January 2016 to June 2018 was used in ** insert paper reference ** .
 
 ## Run the dataflow script
 

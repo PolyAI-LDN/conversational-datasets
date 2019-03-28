@@ -10,22 +10,22 @@ For a description of the baseline systems, see [`baselines/README.md`](baselines
 
 ## Reddit
 
-These are results on the data from January 2016 to June 2018 inclusive, i.e. the dataset used in **citation** (`TABLE_REGEX="^(201[678]_[01][0-9]|2018_0[1-6])$"`). Results should be similar when training/testing on all reddit data.
+These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used in **citation** (`TABLE_REGEX="^201[5678]_[01][0-9]$")$"`).
 
 
 |         	       | 1-of-100 accuracy 	|
 | :---             | :---:	            |
 | **Baselines**    |                    |         	
-| TF_IDF           | 26.7%             	|
-| BM25        	   | 27.6%             	|
-| USE_SIM        	 | 36.8%             	|
-| USE_MAP        	 | 41.1%             	|
-| USE_LARGE_SIM    | 41.1%             	|
-| USE_LARGE_MAP    | 47.9%             	|
-| ELMO_SIM         | 11.6%             	|
-| ELMO_MAP         | 16.9%             	|
+| TF_IDF           | 26.4%             	|
+| BM25        	   | 27.5%             	|
+| USE_SIM        	 | 36.6%             	|
+| USE_MAP        	 | 40.8%             	|
+| USE_LARGE_SIM    | 41.4%             	|
+| USE_LARGE_MAP    | 47.7%             	|
+| ELMO_SIM         | 12.5%             	|
+| ELMO_MAP         | 19.3%             	|
 | **Other models** |                    |
-| Encoder model **citation**  REDDIT-DIRECT	  | 61.7%             	|
+| Encoder model **citation**  REDDIT-DIRECT	  | 61.3%             	|
 
 
 ## OpenSubtitles
