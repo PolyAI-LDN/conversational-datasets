@@ -35,7 +35,7 @@ where
 
 <img alt="y' is y after a linear mapping" src="https://latex.codecogs.com/svg.latex?%5Cmathbf%7By%7D%27%3D(W%2B%5Calpha%20I)%5Ccdot%5Cmathbf%7By%7D" />
 
-and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"> are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to interpolate with the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha).
+and <img alt="W and alpha" src="https://latex.codecogs.com/svg.latex?W,\:\alpha"> are learned parameters. This allows for learning an arbitrary linear mapping on the context side, while making it easy for the model to interpolate with the `SIM` baseline using the residual connection gated by ![alpha](https://latex.codecogs.com/svg.latex?\alpha). Vectors are L2-normalized before being fed to the MAP method, so that the method is invariant to scaling.
 
 The parameters are learned on the training set, using the dot product loss from [Henderson et al 2017](https://arxiv.org/abs/1705.00652). A sweep over learning rate and regularization parameters is performed using a held-out dev set. The final learned parameters are used on the evaluation set.
 

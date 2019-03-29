@@ -23,7 +23,7 @@ These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used
 | USE_LARGE_SIM    | 41.4%             	|
 | USE_LARGE_MAP    | 47.7%             	|
 | ELMO_SIM         | 12.5%             	|
-| ELMO_MAP         | 19.3%             	|
+| ELMO_MAP         | 20.6%             	|
 | **Other models** |                    |
 | Encoder model **citation**  REDDIT-DIRECT	  | 61.3%             	|
 
@@ -40,7 +40,7 @@ These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used
 | USE_LARGE_SIM    | 14.9%             	|
 | USE_LARGE_MAP    | 18.0%             	|
 | ELMO_SIM         | 9.5%             	|
-| ELMO_MAP         | 12.3%             	|
+| ELMO_MAP         | 13.3%             	|
 | **Other models** |                    |
 | Encoder model **citation**  REDDIT-DIRECT	  | 19.1%             	|
 | Encoder model **citation**  FT-DIRECT	  | 31.5%             	|
@@ -57,7 +57,7 @@ These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used
 | USE_LARGE_SIM    | 51.3%             	|
 | USE_LARGE_MAP    | 61.9%             	|
 | ELMO_SIM         | 16.0%             	|
-| ELMO_MAP         | 33.0%             	|
+| ELMO_MAP         | 35.5%             	|
 | **Other models** |                    |
 | Encoder model **citation**  REDDIT-DIRECT	  | 61.6%             	|
 | Encoder model **citation**  FT-DIRECT	  | 71.2%             	|
