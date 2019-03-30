@@ -128,8 +128,7 @@ Each dataset has its own directory, which contains a dataflow script, instructio
 
 |                                	|                                     	| Train set size 	| Test set size 	|
 |--------------------------------	|-------------------------------------	|----------------	|---------------	|
-| [Reddit](reddit)               	| 2016 - June 2018                    	| 416 million    	| 46 million    	|
-|                                	| 2015 - 2019                         	| 654 million    	| 72 million    	|
+| [Reddit](reddit)               	| 2015 - 2019                         	| 654 million    	| 72 million    	|
 | [OpenSubtitles](opensubtitles) 	| English (other languages available) 	| 286 million    	| 33 million    	|
 | [Amazon QA](amazon_qa)         	| -                                   	| 3 million      	| 0.3 million   	|
 
