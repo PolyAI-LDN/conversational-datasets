@@ -132,6 +132,7 @@ Each dataset has its own directory, which contains a dataflow script, instructio
 | [OpenSubtitles](opensubtitles) 	| English (other languages available) 	| 286 million    	| 33 million    	|
 | [Amazon QA](amazon_qa)         	| -                                   	| 3 million      	| 0.3 million   	|
 
+Note that these are the dataset sizes after filtering and other processing. For instance, the Reddit dataset is based on a raw database of 3.7 billion comments, but consists of 726 million examples because the script filters out long comments, short comments, uninformative comments (such as `'[deleted]'`, and comments with no replies.
 
 ## Evaluation
 
