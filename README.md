@@ -12,7 +12,7 @@ This repository provides tools to create reproducible datasets for training and 
 * [OpenSubtitles](opensubtitles) - over 400 million lines from movie and television subtitles (available in English and other languages)
 * [Amazon QA](amazon_qa) - over 3.6 million question-response pairs in the context of Amazon products
 
-Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
+Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community and is now taking off in the NLP community.
 
 Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets, with deterministic train/test splits, which can be used to define reproducible evaluations in research papers.
 
@@ -28,7 +28,7 @@ any dataset in this format is referred to elsewhere as simply a
 
 Datasets are stored as [tensorflow record files](`https://www.tensorflow.org/tutorials/load_data/tf_records`) containing serialized [tensorflow example](https://www.tensorflow.org/tutorials/load_data/tf_records#data_types_for_tfexample) protocol buffers.
 The training set is stored as one collection of tensorflow record files, and
-the test set as another. Examples are shuffled randomly within the tensorflow record files.
+the test set as another. Examples are shuffled randomly (and not necessarily reproducibly) within the tensorflow record files. 
 
 The train/test split is always deterministic, so that whenever the dataset is generated, the same train/test split is created.
 
