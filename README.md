@@ -9,10 +9,10 @@
 This repository provides tools to create reproducible datasets for training and evaluating models of conversational response. This includes:
 
 * [Reddit](reddit) - 3.7 billion comments structured in threaded conversations
-* [OpenSubtitles](opensubtitles) - over 400 million lines from movie and television subtitles. Also available in other languages
-* [Amazon QA](amazon_qa) - over 3.6 million question response pairs in the context of Amazon products
+* [OpenSubtitles](opensubtitles) - over 400 million lines from movie and television subtitles (available in English and other languages)
+* [Amazon QA](amazon_qa) - over 3.6 million question-response pairs in the context of Amazon products
 
-Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets, and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
+Machine learning methods work best with large datasets such as these. At PolyAI we train models of conversational response on huge conversational datasets and then adapt these models to domain-specific tasks in conversational AI. This general approach of pre-training large models on huge datasets has long been popular in the image community, and is now taking off in the NLP community.
 
 Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets, with deterministic train/test splits, which can be used to define reproducible evaluations in research papers.
 
@@ -32,7 +32,7 @@ the test set as another. Examples are shuffled randomly within the tensorflow re
 
 The train/test split is always deterministic, so that whenever the dataset is generated, the same train/test split is created.
 
-Each tensorflow example contains a conversational context, and a response that goes with the context. For example:
+Each tensorflow example contains a conversational context and a response that goes with that context. For example:
 
 ```javascript
 {
@@ -48,10 +48,10 @@ Explicitly, each example contains a number of string features:
 * A `context` feature, the most recent text in the conversational context
 * A `response` feature, the text that is in direct response to the `context`.
 * A number of *extra context features*, `context/0`, `context/1` etc. going
-  back in time through the conversation. They are named in reverse order so that `context/i` always refers to the `i^th` most recent extra context, so no padding needs to be done, and so datasets with different numbers of extra contexts can be mixed.
+  back in time through the conversation. They are named in reverse order so that `context/i` always refers to the `i^th` most recent extra context, so that no padding needs to be done, and datasets with different numbers of extra contexts can be mixed.
 
 Depending on the dataset, there may be some extra features also included in
-each example. E.g. in Reddit, the author of the context and response are
+each example. For instance, in Reddit the author of the context and response are
 identified using additional features.
 
 ### Reading conversational datasets
@@ -104,7 +104,7 @@ tensor_dict = iterator.get_next()
 
 ## Getting Started
 
-Conversational datasets are created using [Apache Beam pipeline](https://beam.apache.org/) scripts, run on [Google Dataflow](https://cloud.google.com/dataflow/). This parallelises the data processing pipeline across many worker machines. Apache Beam requires python 2.7, so set up a python 2.7 virtual environment:
+Conversational datasets are created using [Apache Beam pipeline](https://beam.apache.org/) scripts, run on [Google Dataflow](https://cloud.google.com/dataflow/). This parallelises the data processing pipeline across many worker machines. Apache Beam requires python 2.7, so you will need to set up a python 2.7 virtual environment:
 
 ```bash
 python2.7 -m virtualenv venv
@@ -136,15 +136,15 @@ Each dataset has its own directory, which contains a dataflow script, instructio
 ## Evaluation
 
 Of course you may evaluate your models in any way you like.
-However when publishing results, we encourage you to include the
+However, when publishing results, we encourage you to include the
 1-of-100 ranking accuracy, which is becoming a research community standard.
 
 The 1-of-100 ranking accuracy is a *Recall@k* metric. In general *Recall@k*
 takes *N* responses to the given conversational context, where only one response is relevant. It indicates whether the relevant response occurs in the top *k* ranked candidate responses.
 The 1-of-100 metric is obtained when *k=1* and *N=100*.
-This effectively means that for each query, we indicate if the correct response is the top ranked response among 100 candidates. The final score is the average across all queries.
+This effectively means that, for each query, we indicate if the correct response is the top ranked response among 100 candidates. The final score is the average across all queries.
 
-The 1-of-100 metric is computed using random batches of 100 examples, so that the responses from other examples in the batch are used as random negative candidates. This allows for efficiently computing the metric across many examples in batches. While it is not guaranteed that the random negatives will indeed be 'true' negatives, it still provides a useful evaluation signal that correlates with downstream tasks.
+The 1-of-100 metric is computed using random batches of 100 examples so that the responses from other examples in the batch are used as random negative candidates. This allows for efficiently computing the metric across many examples in batches. While it is not guaranteed that the random negatives will indeed be 'true' negatives, the 1-of-100 metric still provides a useful evaluation signal that correlates with downstream tasks.
 
 The following tensorflow code shows how this metric can be computed for a dot-product style encoder model, where the score for each context and response is a dot product between corresponding vectors:
 
@@ -196,9 +196,9 @@ When using these datasets in your work, please cite:
 ## Contributing
 
 We happily accept contributions in the form of pull requests.
-Each pull request is tested in CircleCI - it is first linted with `flake8` and then the unit tests are run. In particular we would be interested in:
+Each pull request is tested in CircleCI - it is first linted with `flake8`, and then the unit tests are run. In particular we would be interested in:
 
 * new datasets
-* adaptations to the scripts so they work better in your environment (e.g. other Apache Beam runners, other cloud storage solutions, other example formats)
+* adaptations to the scripts so that they work better in your environment (e.g. other Apache Beam runners, other cloud storage solutions, other example formats)
 * results from your methods in the benchmarks [the benchmarks page](BENCHMARKS.md).
 * code for new baselines and improvements to existing baselines
