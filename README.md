@@ -58,6 +58,46 @@ identified using additional features.
 
 The [`tools/tfrutil.py`](tools/tfrutil.py) and [`baselines/run_baseline.py`](baselines/run_baseline.py) scripts demonstrate how to read a conversational dataset in Python, using functions from the tensorflow library.
 
+You can use [`tools/tfrutil.py`](tools/tfrutil.py) to compute the number of examples in a tensorflow record file:
+
+```
+$ python tools/tfrutil.py size data/reddit-test
+726158
+```
+
+It can also be used to display the examples in a readable format:
+
+```
+$ python tools/tfrutil.py pp data/reddit-test
+
+Example 0
+--------
+[Context]:
+	Airplane? What is it?
+[Response]:
+	Airplane! The movie. It's an amazing parody of plane movies which sounds terrible but it is actually 10/10.
+
+Extra Contexts:
+	[context/2]:
+		Unfortunately, they all had the fish for dinner.
+	[context/1]:
+		This is some sort of reference? I don't get it.
+	[context/0]:
+		Airplane. Drop everything and watch it right now
+
+Other features:
+	[context_author]:
+		Doctor_Insano_MD
+	[response_author]:
+		ThegreatandpowerfulR
+	[subreddit]:
+		todayilearned
+	[thread_id]:
+		41ar0l
+--------
+...
+```
+
 Below is some example tensorflow code for reading a conversational dataset
 into a tensorflow graph:
 
