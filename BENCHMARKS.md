@@ -10,7 +10,7 @@ For a description of the baseline systems, see [`baselines/README.md`](baselines
 
 ## Reddit
 
-These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used in **citation** (`TABLE_REGEX="^201[5678]_[01][0-9]$")$"`).
+These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[5678]_[01][0-9]$")$"`).
 
 
 |         	       | 1-of-100 accuracy 	|
