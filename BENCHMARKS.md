@@ -25,7 +25,7 @@ These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used
 | ELMO_SIM         | 12.5%             	|
 | ELMO_MAP         | 20.6%             	|
 | **Other models** |                    |
-| Encoder model **citation**  REDDIT-DIRECT	  | 61.3%             	|
+| PolyAI-Encoder [1]	  | 61.3%             	|
 
 
 ## OpenSubtitles
@@ -42,8 +42,8 @@ These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used
 | ELMO_SIM         | 9.5%             	|
 | ELMO_MAP         | 13.3%             	|
 | **Other models** |                    |
-| Encoder model **citation**  REDDIT-DIRECT	  | 19.1%             	|
-| Encoder model **citation**  FT-DIRECT	  | 30.6%             	|
+| PolyAI-Encoder [1]	  | 30.6%             	|
+
 
 ## AmazonQA
 
@@ -59,5 +59,9 @@ These are results on the data from 2015 to 2018 inclusive, i.e. the dataset used
 | ELMO_SIM         | 16.0%             	|
 | ELMO_MAP         | 35.5%             	|
 | **Other models** |                    |
-| Encoder model **citation**  REDDIT-DIRECT	  | 61.4%             	|
-| Encoder model **citation**  FT-DIRECT	  | 84.2%             	|
+| PolyAI-Encoder [1]	  | 84.2%             	|
+
+
+# References
+
+[1] [A Repository of Conversational Datasets](https://arxiv.org/abs/1904.06472). Henderson et al. arXiv pre-print 2019.

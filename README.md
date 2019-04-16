@@ -16,6 +16,19 @@ Machine learning methods work best with large datasets such as these. At PolyAI 
 
 Rather than providing the raw processed data, we provide scripts and instructions to generate the data yourself. This allows you to view and potentially manipulate the pre-processing and filtering. The instructions define standard datasets, with deterministic train/test splits, which can be used to define reproducible evaluations in research papers.
 
+## Datasets
+
+Each dataset has its own directory, which contains a dataflow script, instructions for running it, and unit tests.
+
+|                                	|                                     	| Train set size 	| Test set size 	|
+|--------------------------------	|-------------------------------------	|----------------	|---------------	|
+| [Reddit](reddit)               	| 2015 - 2019                         	| 654 million    	| 72 million    	|
+| [OpenSubtitles](opensubtitles) 	| English (other languages available) 	| 286 million    	| 33 million    	|
+| [Amazon QA](amazon_qa)         	| -                                   	| 3 million      	| 0.3 million   	|
+
+Note that these are the dataset sizes after filtering and other processing. For instance, the Reddit dataset is based on a raw database of 3.7 billion comments, but consists of 726 million examples because the script filters out long comments, short comments, uninformative comments (such as `'[deleted]'`, and comments with no replies.
+
+
 ## Benchmarks
 
 Benchmark results for each of the datasets can be found in [`BENCHMARKS.md`](BENCHMARKS.md).
@@ -28,7 +41,7 @@ any dataset in this format is referred to elsewhere as simply a
 
 Datasets are stored as [tensorflow record files](`https://www.tensorflow.org/tutorials/load_data/tf_records`) containing serialized [tensorflow example](https://www.tensorflow.org/tutorials/load_data/tf_records#data_types_for_tfexample) protocol buffers.
 The training set is stored as one collection of tensorflow record files, and
-the test set as another. Examples are shuffled randomly (and not necessarily reproducibly) within the tensorflow record files. 
+the test set as another. Examples are shuffled randomly (and not necessarily reproducibly) within the tensorflow record files.
 
 The train/test split is always deterministic, so that whenever the dataset is generated, the same train/test split is created.
 
@@ -162,17 +175,6 @@ export GOOGLE_APPLICATION_CREDENTIALS={{json file key location}}
 
 This should be enough to follow the instructions for creating each individual dataset.
 
-## Datasets
-
-Each dataset has its own directory, which contains a dataflow script, instructions for running it, and unit tests.
-
-|                                	|                                     	| Train set size 	| Test set size 	|
-|--------------------------------	|-------------------------------------	|----------------	|---------------	|
-| [Reddit](reddit)               	| 2015 - 2019                         	| 654 million    	| 72 million    	|
-| [OpenSubtitles](opensubtitles) 	| English (other languages available) 	| 286 million    	| 33 million    	|
-| [Amazon QA](amazon_qa)         	| -                                   	| 3 million      	| 0.3 million   	|
-
-Note that these are the dataset sizes after filtering and other processing. For instance, the Reddit dataset is based on a raw database of 3.7 billion comments, but consists of 726 million examples because the script filters out long comments, short comments, uninformative comments (such as `'[deleted]'`, and comments with no replies.
 
 ## Evaluation
 
@@ -209,20 +211,38 @@ accuracy_1_of_100 = tf.metrics.accuracy(
 
 See also the [baselines](baselines) for example code computing the 1-of-100 metric.
 
-The following papers use *Recall@k* in the context of retrieval-based dialogue:
+Many studies have used *Recall@k* in the context of retrieval-based dialogue, including the following papers:
+
+* [*The Ubuntu Dialogue Corpus: A Large Dataset for Research in Unstructured Multi-Turn Dialogue Systems*](https://aclweb.org/anthology/W15-4640), Lowe et al. SIGDIAL 2015.
+
+* [*Neural Utterance Ranking Model for Conversational Dialogue Systems*](https://www.aclweb.org/anthology/W16-3648), Inaba and Takahashi. SIGDIAL 2016.
+
+* [*Strategy and Policy Learning for Non-task-oriented Conversational Systems*](https://aclweb.org/anthology/W16-3649), Yu et al. SIGDIAL 2016.
 
 * [*Training End-to-End Dialogue Systems with the Ubuntu Dialogue Corpus*](http://dad.uni-bielefeld.de/index.php/dad/article/view/3698), Lowe et al. Dialogue and Discourse 2017.
 
-* [*Multi-Turn Response Selection for Chatbots with Deep Attention Matching Network*](http://aclweb.org/anthology/P18-1103), Zhou et al. ACL 2018.
+* [*Sequential Matching Network: A New Architecture for Multi-turn Response Selection in Retrieval-based Chatbots*](https://aclweb.org/anthology/P17-1046), Wu et al. ACL 2017.
 
 * [*Improving Response Selection in Multi-turn Dialogue Systems by Incorporating Domain Knowledge*](http://aclweb.org/anthology/K18-1048),
 Chaudhuri et al. CoNLL 2018.
+
+* [*Data Augmentation for Neural Online Chats Response Selection*](https://aclweb.org/anthology/W18-5708), Du and Black. SCAI 2018.
+
+* [*Customized Nonlinear Bandits for Online Response Selection in Neural Conversational Models*](https://arxiv.org/pdf/1711.08493.pdf), Liu et al. AAAI 2018.
+
+* [*DSTC7 task 1: Noetic end-to-end response selection*](https://aclweb.org/anthology/W18-5708), Gunasekara et al. 2019.
+
+* [*Multi-representation Fusion Network for Multi-Turn Response Selection in Retrieval-based Chatbots*](https://dl.acm.org/citation.cfm?doid=3289600.3290985), Tao et al. WSDM 2019.
+
+* [*Multi-Turn Response Selection for Chatbots with Deep Attention Matching Network*](http://aclweb.org/anthology/P18-1103), Zhou et al. ACL 2018.
 
 The following papers use the 1-of-100 ranking accuracy in particular:
 
 * [*Conversational Contextual Cues: The Case of Personalization  and History  for  Response  Ranking.*](http://arxiv.org/abs/1606.00372), Al-Rfou et al. arXiv pre-print 2016.
 
 * [*Efficient Natural Language Response Suggestion for Smart Reply*](http://arxiv.org/abs/1705.00652), Henderson et al. arXiv pre-print 2017.
+
+* [*Question-Answer Selection in User to User Marketplace Conversations*](https://arxiv.org/pdf/1802.01766.pdf), Kumar et al. IWSDS 2018.
 
 * [*Universal Sentence Encoder*](https://arxiv.org/abs/1803.11175), Cer et al. arXiv pre-print 2018.
 
@@ -232,7 +252,20 @@ The following papers use the 1-of-100 ranking accuracy in particular:
 
 ## Citations
 
-When using these datasets in your work, please cite:
+When using these datasets in your work, please cite our paper, [A Repository of Conversational Datasets](https://arxiv.org/abs/1904.06472):
+
+```bibtex
+@Article{Henderson2019,
+    author      = {Matthew Henderson and Pawe{\l} Budzianowski and I{\~{n}}igo Casanueva and Sam Coope and Daniela Gerz and Girish Kumar and Nikola Mrk{\v{s}}i\'c and Georgios Spithourakis and Pei-Hao Su and Ivan Vulic and Tsung-Hsien Wen},
+    title       = {A Repository of Conversational Datasets},
+    year        = {2019},
+    month       = {apr},
+    note        = {Data available at github.com/PolyAI-LDN/conversational-datasets},
+    journal     = {CoRR},
+    volume      = {abs/1904.06472},
+    url = {https://arxiv.org/abs/1904.06472},
+}
+```
 
 ## Contributing
 
