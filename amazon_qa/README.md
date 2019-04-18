@@ -25,6 +25,7 @@ Typical metrics for the Dataflow job:
 * Total memory time: 2.653 GB hr
 * Total persistent disk time: 176.864 GB hr
 * Elapsed time: 17m (4 workers)
+* Estimated cost: less than 10 cents
 
 # Create the conversational dataset
 
