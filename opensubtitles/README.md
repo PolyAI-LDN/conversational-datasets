@@ -75,7 +75,7 @@ DATADIR="gs://${BUCKET?}/opensubtitles/$(date +"%Y%m%d")"
 
 python opensubtitles/create_data.py \
   --output_dir ${DATADIR?} \
-  --sentence_files gs://${BUCKET?}/opensubtitles/raw/lines-* \
+  --sentence_files gs://${BUCKET?}/opensubtitles/raw/lines/lines-* \
   --runner DataflowRunner \
   --temp_location ${DATADIR?}/temp \
   --staging_location ${DATADIR?}/staging \
