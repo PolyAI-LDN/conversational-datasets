@@ -57,11 +57,15 @@ class Method(enum.Enum):
     USE_SIM = 3
     USE_LARGE_SIM = 4
     ELMO_SIM = 5
+    BERT_SMALL_SIM = 6
+    BERT_LARGE_SIM = 7
 
     # Vector mapping methods.
-    USE_MAP = 6
-    USE_LARGE_MAP = 7
-    ELMO_MAP = 8
+    USE_MAP = 8
+    USE_LARGE_MAP = 9
+    ELMO_MAP = 10
+    BERT_SMALL_MAP = 11
+    BERT_LARGE_MAP = 12
 
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
@@ -97,6 +101,26 @@ class Method(enum.Enum):
             return vector_based.VectorMappingMethod(
                 encoder=vector_based.TfHubEncoder(
                     "https://tfhub.dev/google/elmo/1"))
+        elif self == self.BERT_SMALL_SIM:
+            return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.BERTEncoder(
+                    "https://tfhub.dev/google/"
+                    "bert_uncased_L-12_H-768_A-12/1"))
+        elif self == self.BERT_SMALL_MAP:
+            return vector_based.VectorMappingMethod(
+                encoder=vector_based.BERTEncoder(
+                    "https://tfhub.dev/google/"
+                    "bert_uncased_L-12_H-768_A-12/1"))
+        elif self == self.BERT_LARGE_SIM:
+            return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.BERTEncoder(
+                    "https://tfhub.dev/google/"
+                    "bert_uncased_L-24_H-1024_A-16/1"))
+        elif self == self.BERT_LARGE_MAP:
+            return vector_based.VectorMappingMethod(
+                encoder=vector_based.BERTEncoder(
+                    "https://tfhub.dev/google/"
+                    "bert_uncased_L-24_H-1024_A-16/1"))
         raise ValueError("Unknown method {}".format(self))
 
     def __str__(self):

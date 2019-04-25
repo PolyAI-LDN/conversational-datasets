@@ -12,6 +12,8 @@ import tensorflow_hub
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+import bert.run_classifier
+import bert.tokenization
 from baselines import method
 
 
@@ -33,7 +35,7 @@ class Encoder(object):
 
 
 class TfHubEncoder(Encoder):
-    """An encoder that is loaded as a module from tensorflow hub.
+    """encoder that is loaded as a module from tensorflow hub.
 
     The tensorflow hub module must take a vector of strings, and return
     a matrix of encodings.
@@ -57,6 +59,87 @@ class TfHubEncoder(Encoder):
     def encode(self, texts):
         """Encode the given texts."""
         return self._session.run(self._embeddings, {self._fed_texts: texts})
+
+
+class BERTEncoder(Encoder):
+    """The BERT encoder that is loaded as a module from tensorflow hub.
+
+    This class tokenizes the input text using the bert tokenization
+    library.
+
+    Args:
+        uri: (string) the tensorflow hub URI for the model.
+    """
+    def __init__(self, uri):
+        """Create a new `BERTEncoder` object."""
+        self._session = tf.Session(graph=tf.Graph())
+        with self._session.graph.as_default():
+            glog.info("Loading %s model from tensorflow hub", uri)
+            embed_fn = tensorflow_hub.Module(uri, trainable=False)
+            self._tokenizer = self._create_tokenizer_from_hub_module(uri)
+            self._input_ids = tf.placeholder(shape=[None, None],
+                                             dtype=tf.int32)
+            self._input_mask = tf.placeholder(shape=[None, None],
+                                              dtype=tf.int32)
+            self._segment_ids = tf.placeholder(shape=[None, None],
+                                               dtype=tf.int32)
+            bert_inputs = dict(
+                input_ids=self._input_ids,
+                input_mask=self._input_mask,
+                segment_ids=self._segment_ids
+            )
+
+            embeddings = embed_fn(
+                inputs=bert_inputs, signature="tokens", as_dict=True)[
+                "sequence_output"
+            ]
+            self._embeddings = tf.reduce_sum(embeddings, axis=1)
+
+            init_ops = (
+                tf.global_variables_initializer(), tf.tables_initializer())
+        glog.info("Initializing graph.")
+        self._session.run(init_ops)
+
+    def encode(self, texts):
+        """Encode the given texts."""
+        input_examples = [bert.run_classifier.InputExample(
+            guid="", text_a=x, text_b=None, label=0)
+            for x in texts]  # here, "" is just a dummy label
+        label_list = [0]  # dummy label
+        max_seq_length = 128
+        input_features = bert.run_classifier.convert_examples_to_features(
+            input_examples, label_list, max_seq_length, self._tokenizer)
+        input_ids = []
+        input_mask = []
+        segment_ids = []
+
+        for feat in input_features:
+            input_ids.append(feat.input_ids)
+            input_mask.append(feat.input_mask)
+            segment_ids.append(feat.segment_ids)
+
+        return self._session.run(
+            self._embeddings,
+            {self._input_ids: input_ids,
+             self._input_mask: input_mask,
+             self._segment_ids: segment_ids})
+
+    @staticmethod
+    def _create_tokenizer_from_hub_module(uri):
+        """Get the vocab file and casing info from the Hub module."""
+        with tf.Graph().as_default():
+            bert_module = tensorflow_hub.Module(uri)
+            tokenization_info = bert_module(
+                signature="tokenization_info", as_dict=True)
+            with tf.Session() as sess:
+                vocab_file, do_lower_case = sess.run(
+                    [
+                        tokenization_info["vocab_file"],
+                        tokenization_info["do_lower_case"]
+                    ])
+
+        return bert.tokenization.FullTokenizer(
+            vocab_file=vocab_file, do_lower_case=do_lower_case)
 
 
 class VectorSimilarityMethod(method.BaselineMethod):
@@ -101,7 +184,7 @@ class VectorMappingMethod(method.BaselineMethod):
     def __init__(
         self,
         encoder,
-        learning_rates=(10.0, 3.0, 1.0, 0.3),
+        learning_rates=(10.0, 3.0, 1.0, 0.3, 0.01),
         regularizers=(0, 0.1, 0.01, 0.001),
     ):
         """Create a new `VectorMappingMethod` object."""
@@ -146,6 +229,7 @@ class VectorMappingMethod(method.BaselineMethod):
             context_encodings).astype(np.float32)
         response_encodings = np.concatenate(
             response_encodings).astype(np.float32)
+
         return train_test_split(
             context_encodings, response_encodings,
             test_size=0.2)

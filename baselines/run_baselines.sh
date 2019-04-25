@@ -11,12 +11,13 @@ OUTPUT_FILE=baselines/results.csv
 echo "method, train, test, train_size, test_size, recall_k, accuracy" > ${OUTPUT_FILE}
 
 for DATASET in reddit os amazon; do
-  for METHOD in TF_IDF BM25 USE_SIM USE_MAP USE_LARGE_SIM USE_LARGE_MAP ELMO_SIM ELMO_MAP; do
+  for METHOD in TF_IDF BM25 USE_SIM USE_MAP USE_LARGE_SIM
+   USE_LARGE_MAP ELMO_SIM ELMO_MAP BERT_SMALL_SIM BERT_SMALL_MAP BERT_LARGE_SIM BERT_LARGE_MAP; do
 
     echo "Running ${METHOD} method on ${DATASET} data."
 
     EVAL_NUM_BATCHES=500
-    if [[ "$METHOD" == USE_LARGE*  ]] || [[ "$METHOD" == ELMO*  ]]; then
+    if [[ "$METHOD" == USE_LARGE*  ]] || [[ "$METHOD" == ELMO*  ]] || [[ "$METHOD" == BERT*  ]]; then
       # These models are slow, so reduce the number of eval batches.
       EVAL_NUM_BATCHES=100
     fi
