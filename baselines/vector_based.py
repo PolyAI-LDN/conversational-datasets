@@ -35,7 +35,7 @@ class Encoder(object):
 
 
 class TfHubEncoder(Encoder):
-    """encoder that is loaded as a module from tensorflow hub.
+    """An encoder that is loaded as a module from tensorflow hub.
 
     The tensorflow hub module must take a vector of strings, and return
     a matrix of encodings.
@@ -65,7 +65,8 @@ class BERTEncoder(Encoder):
     """The BERT encoder that is loaded as a module from tensorflow hub.
 
     This class tokenizes the input text using the bert tokenization
-    library.
+    library. The final encoding is computed as the sum of the token
+    embeddings.
 
     Args:
         uri: (string) the tensorflow hub URI for the model.
