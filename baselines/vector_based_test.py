@@ -1,5 +1,7 @@
 """Tests for vector_based.py."""
 
+import os
+import tempfile
 import unittest
 
 import mock
@@ -23,6 +25,58 @@ class TfHubEncoderTest(unittest.TestCase):
 
         encodings = encoder.encode(["hello", "hi"])
         np.testing.assert_allclose([[1, 1, 1], [1, 1, 1]], encodings)
+
+
+class BERTEncoderTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Create a dummy vocabulary file."""
+        vocab_tokens = [
+            "[UNK]", "[CLS]", "[SEP]", "hello", "hi",
+        ]
+        with tempfile.NamedTemporaryFile(delete=False) as vocab_writer:
+            vocab_writer.write("".join([x + "\n" for x in vocab_tokens]))
+        cls.vocab_file = vocab_writer.name
+
+    @classmethod
+    def tearDownClass(cls):
+        """Delete the dummy vocabulary file."""
+        os.unlink(cls.vocab_file)
+
+    @patch("tensorflow_hub.Module")
+    def test_encode(self, mock_module_cls):
+
+        def mock_module(inputs=None, signature=None, as_dict=None):
+            self.assertTrue(as_dict)
+            if signature == "tokens":
+                self.assertEqual(
+                    {'input_mask', 'input_ids', 'segment_ids'},
+                    inputs.viewkeys())
+                batch_size = tf.shape(inputs['input_ids'])[0]
+                seq_len = tf.shape(inputs['input_ids'])[1]
+                return {
+                    'sequence_output': tf.ones([batch_size, seq_len, 3])
+                }
+            self.assertEqual("tokenization_info", signature)
+            return {
+                'do_lower_case': tf.constant(True),
+                'vocab_file': tf.constant(self.vocab_file),
+            }
+
+        mock_module_cls.return_value = mock_module
+
+        encoder = vector_based.BERTEncoder("test_uri")
+        self.assertEqual(
+            [(("test_uri",), {'trainable': False})] * 2,
+            mock_module_cls.call_args_list)
+
+        # Final encodings will just be the count of the tokens in each
+        # sentence, repeated 3 times.
+        encodings = encoder.encode(["hello"])
+        np.testing.assert_allclose([[3, 3, 3]], encodings)
+
+        encodings = encoder.encode(["hello", "hello hi"])
+        np.testing.assert_allclose([[3, 3, 3], [4, 4, 4]], encodings)
 
 
 class VectorSimilarityMethodTest(unittest.TestCase):

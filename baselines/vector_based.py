@@ -73,17 +73,20 @@ class BERTEncoder(Encoder):
     """
     def __init__(self, uri):
         """Create a new `BERTEncoder` object."""
+        if not tf.test.is_gpu_available():
+            glog.warning(
+                "No GPU detected, BERT will run a lot slower than with a GPU.")
+
         self._session = tf.Session(graph=tf.Graph())
         with self._session.graph.as_default():
             glog.info("Loading %s model from tensorflow hub", uri)
             embed_fn = tensorflow_hub.Module(uri, trainable=False)
             self._tokenizer = self._create_tokenizer_from_hub_module(uri)
-            self._input_ids = tf.placeholder(shape=[None, None],
-                                             dtype=tf.int32)
-            self._input_mask = tf.placeholder(shape=[None, None],
-                                              dtype=tf.int32)
-            self._segment_ids = tf.placeholder(shape=[None, None],
-                                               dtype=tf.int32)
+            self._input_ids = tf.placeholder(
+                name="input_ids", shape=[None, None], dtype=tf.int32)
+            self._input_mask = tf.placeholder(
+                name="input_mask", shape=[None, None], dtype=tf.int32)
+            self._segment_ids = tf.zeros_like(self._input_ids)
             bert_inputs = dict(
                 input_ids=self._input_ids,
                 input_mask=self._input_mask,
@@ -94,7 +97,9 @@ class BERTEncoder(Encoder):
                 inputs=bert_inputs, signature="tokens", as_dict=True)[
                 "sequence_output"
             ]
-            self._embeddings = tf.reduce_sum(embeddings, axis=1)
+            mask = tf.expand_dims(
+                tf.cast(self._input_mask, dtype=tf.float32), -1)
+            self._embeddings = tf.reduce_sum(mask * embeddings, axis=1)
 
             init_ops = (
                 tf.global_variables_initializer(), tf.tables_initializer())
@@ -103,33 +108,13 @@ class BERTEncoder(Encoder):
 
     def encode(self, texts):
         """Encode the given texts."""
-        input_examples = [bert.run_classifier.InputExample(
-            guid="", text_a=x, text_b=None, label=0)
-            for x in texts]  # here, "" is just a dummy label
-        label_list = [0]  # dummy label
-        max_seq_length = 128
-        input_features = bert.run_classifier.convert_examples_to_features(
-            input_examples, label_list, max_seq_length, self._tokenizer)
-        input_ids = []
-        input_mask = []
-        segment_ids = []
-
-        for feat in input_features:
-            input_ids.append(feat.input_ids)
-            input_mask.append(feat.input_mask)
-            segment_ids.append(feat.segment_ids)
-
-        return self._session.run(
-            self._embeddings,
-            {self._input_ids: input_ids,
-             self._input_mask: input_mask,
-             self._segment_ids: segment_ids})
+        return self._session.run(self._embeddings, self._feed_dict(texts))
 
     @staticmethod
     def _create_tokenizer_from_hub_module(uri):
         """Get the vocab file and casing info from the Hub module."""
         with tf.Graph().as_default():
-            bert_module = tensorflow_hub.Module(uri)
+            bert_module = tensorflow_hub.Module(uri, trainable=False)
             tokenization_info = bert_module(
                 signature="tokenization_info", as_dict=True)
             with tf.Session() as sess:
@@ -141,6 +126,41 @@ class BERTEncoder(Encoder):
 
         return bert.tokenization.FullTokenizer(
             vocab_file=vocab_file, do_lower_case=do_lower_case)
+
+    def _feed_dict(self, texts, max_seq_len=128):
+        """Create a feed dict for feeding the texts as input.
+
+        This uses dynamic padding so that the maximum sequence length is the
+        smaller of `max_seq_len` and the longest sequence actually found in the
+        batch. (The code in `bert.run_classifier` always pads up to the maximum
+        even if the examples in the batch are all shorter.)
+        """
+        all_ids = []
+        for text in texts:
+            tokens = ["[CLS]"] + self._tokenizer.tokenize(text)
+
+            # Possibly truncate the tokens.
+            tokens = tokens[:(max_seq_len - 1)]
+            tokens.append("[SEP]")
+            ids = self._tokenizer.convert_tokens_to_ids(tokens)
+            all_ids.append(ids)
+
+        max_seq_len = max(map(len, all_ids))
+
+        input_ids = []
+        input_mask = []
+        for ids in all_ids:
+            mask = [1] * len(ids)
+
+            # Zero-pad up to the sequence length.
+            while len(ids) < max_seq_len:
+                ids.append(0)
+                mask.append(0)
+
+            input_ids.append(ids)
+            input_mask.append(mask)
+
+        return {self._input_ids: input_ids, self._input_mask: input_mask}
 
 
 class VectorSimilarityMethod(method.BaselineMethod):
