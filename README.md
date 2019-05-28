@@ -167,6 +167,8 @@ pip install -r requirements.txt
 
 The Dataflow scripts write conversational datasets to Google cloud storage, so you will need to [create a bucket](https://cloud.google.com/storage/docs/creating-buckets) to save the dataset to.
 
+Dataflow will run workers on multiple Compute Engine instances, so make sure you have a sufficient [quota](https://cloud.google.com/dataflow/quotas) of `n1-standard-1` machines. The READMEs for individual datasets give an idea of how many workers are required, and how long each dataflow job should take.
+
 Lastly, you will need to [set up authentication](https://cloud.google.com/docs/authentication/getting-started) by creating a service account with access to Dataflow and Cloud Storage, and set `GOOGLE_APPLICATION_CREDENTIALS`:
 
 ```bash
