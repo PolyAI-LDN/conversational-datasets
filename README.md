@@ -257,16 +257,16 @@ The following papers use the 1-of-100 ranking accuracy in particular:
 When using these datasets in your work, please cite our paper, [A Repository of Conversational Datasets](https://arxiv.org/abs/1904.06472):
 
 ```bibtex
-@Article{Henderson2019,
+@inproceedings{Henderson2019,
     author      = {Matthew Henderson and Pawe{\l} Budzianowski and I{\~{n}}igo Casanueva and Sam Coope and Daniela Gerz and Girish Kumar and Nikola Mrk{\v{s}}i\'c and Georgios Spithourakis and Pei-Hao Su and Ivan Vulic and Tsung-Hsien Wen},
     title       = {A Repository of Conversational Datasets},
     year        = {2019},
-    month       = {apr},
+    month       = {jul},
     note        = {Data available at github.com/PolyAI-LDN/conversational-datasets},
-    journal     = {CoRR},
-    volume      = {abs/1904.06472},
-    url = {https://arxiv.org/abs/1904.06472},
+    url         = {https://arxiv.org/abs/1904.06472},
+    booktitle   = {Proceedings of the Workshop on {NLP} for Conversational {AI}},
 }
+
 ```
 
 ## Contributing
