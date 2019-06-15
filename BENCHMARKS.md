@@ -29,7 +29,8 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | BERT_LARGE_SIM   | 14.8%         	    |
 | BERT_LARGE_MAP   | 24.0%         	    |
 | **Other models** |                    |
-| PolyAI-Encoder [1]	  | 61.3%             	|
+| PolyAI-Encoder [1]	  | 61.3%         |
+| PolyAI subword encoder [2] | 65.0%    |
 
 
 ## OpenSubtitles
@@ -77,3 +78,4 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 # References
 
 [1] [A Repository of Conversational Datasets](https://arxiv.org/abs/1904.06472). Henderson et al. arXiv pre-print 2019.
+[2] An encoder model leveraging deep transformer-style attention layers. Work under review.
