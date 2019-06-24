@@ -30,7 +30,7 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | BERT_LARGE_MAP   | 24.0%         	    |
 | **Other models** |                    |
 | PolyAI-Encoder [1]	  | 61.3%         |
-| PolyAI subword encoder [2] | 65.0%    |
+| PolyAI subword encoder [2] | 66.9%    |
 
 
 ## OpenSubtitles
