@@ -6,6 +6,7 @@ For usage see README.md.
 
 import argparse
 import hashlib
+import json
 import logging
 import os
 import re
@@ -17,8 +18,12 @@ import apache_beam as beam
 import tensorflow as tf
 from apache_beam import pvalue
 from apache_beam.io.filesystems import FileSystems
+from apache_beam.io.textio import WriteToText
 from apache_beam.io.tfrecordio import WriteToTFRecord
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
+
+_TF_FORMAT = "TF"
+_JSON_FORMAT = "JSON"
 
 
 def _parse_args(argv=None):
@@ -54,6 +59,14 @@ def _parse_args(argv=None):
         "--output_dir", required=True,
         help="Output directory to write the dataset.")
     parser.add_argument(
+        "--dataset_format",
+        choices={_TF_FORMAT, _JSON_FORMAT},
+        default="TF",
+        help="The dataset format to write. 'TF' for serialized tensorflow "
+             "examples in TFRecords. 'JSON' for text files with one JSON "
+             "object per line."
+    )
+    parser.add_argument(
         "--train_split", default=0.9,
         type=float,
         help="The proportion of data to put in the training set.")
@@ -75,7 +88,7 @@ def _should_skip(line, min_length, max_length):
 
 
 def create_example(previous_lines, line, file_id):
-    """Creates serialized tensorflow examples with multi-line context
+    """Creates examples with multi-line context
 
     The examples will include:
         file_id: the name of the file where these lines were obtained.
@@ -84,23 +97,19 @@ def create_example(previous_lines, line, file_id):
         context/0: 2 lines before
         context/1: 3 lines before, etc.
     """
-    example = tf.train.Example()
-
-    example.features.feature['file_id'].bytes_list.value.append(
-        file_id.encode("utf-8"))
-
-    context = previous_lines[-1]
-    example.features.feature['context'].bytes_list.value.append(
-        context.encode("utf-8"))
+    example = {
+        'file_id': file_id,
+        'context': previous_lines[-1],
+        'response': line,
+    }
+    example['file_id'] = file_id
+    example['context'] = previous_lines[-1]
 
     extra_contexts = previous_lines[:-1]
-    for i, context in enumerate(extra_contexts[::-1]):
-        example.features.feature[
-            'context/{}'.format(i)].bytes_list.value.append(
-            context.encode("utf-8"))
-
-    example.features.feature['response'].bytes_list.value.append(
-        line.encode("utf-8"))
+    example.update({
+        'context/{}'.format(i): context
+        for i, context in enumerate(extra_contexts[::-1])
+    })
 
     return example
 
@@ -142,12 +151,23 @@ def _create_examples_from_file(file_name, min_length, max_length,
                 max_length=max_length)
 
             if not should_skip:
-                example = create_example(previous_lines, line, file_id)
-                yield example.SerializeToString()
+                yield create_example(previous_lines, line, file_id)
 
         previous_lines.append(line)
         if len(previous_lines) > num_extra_contexts + 1:
             del previous_lines[0]
+
+
+def _features_to_serialized_tf_example(features):
+    """Convert a string dict to a serialized TF example.
+
+    The dictionary maps feature names (strings) to feature values (strings).
+    """
+    example = tf.train.Example()
+    for feature_name, feature_value in features.items():
+        example.features.feature[feature_name].bytes_list.value.append(
+            feature_value.encode("utf-8"))
+    return example.SerializeToString()
 
 
 def _shuffle_examples(examples):
@@ -159,7 +179,7 @@ def _shuffle_examples(examples):
 
 
 class _TrainTestSplitFn(beam.DoFn):
-    """Splits an input PCollection of serialized examples into train and test.
+    """Splits an input PCollection of examples into train and test.
 
     This uses the file id (name) to compute the split, so that examples from
     the same file are in the same set. The split is deterministic based on
@@ -174,16 +194,12 @@ class _TrainTestSplitFn(beam.DoFn):
         self._train_split = train_split
         self._num_buckets = num_buckets
 
-    def process(self, serialized_example):
-        example = tf.train.Example()
-        example.ParseFromString(serialized_example)
-
-        file_id, = example.features.feature['file_id'].bytes_list.value
-        split_value = self._split_value(file_id)
+    def process(self, example):
+        split_value = self._split_value(example['file_id'])
         split = (
             self.TRAIN_TAG if split_value < self._train_split else
             self.TEST_TAG)
-        yield pvalue.TaggedOutput(split, serialized_example)
+        yield pvalue.TaggedOutput(split, example)
 
     def _split_value(self, file_id):
         """Compute a value from 0 to 1 used to compute the split."""
@@ -212,29 +228,42 @@ def run(argv=None):
                  len(sentence_files), args.sentence_files)
     assert len(sentence_files) > 0
     sentence_files = p | beam.Create(sentence_files)
-    serialized_examples = sentence_files | "create examples" >> beam.FlatMap(
+    examples = sentence_files | "create examples" >> beam.FlatMap(
         partial(_create_examples_from_file,
                 min_length=args.min_length,
                 max_length=args.max_length,
                 num_extra_contexts=args.num_extra_contexts)
     )
 
-    serialized_examples = _shuffle_examples(serialized_examples)
+    examples = _shuffle_examples(examples)
 
-    serialized_examples |= "split train and test" >> beam.ParDo(
+    examples |= "split train and test" >> beam.ParDo(
         _TrainTestSplitFn(args.train_split)).with_outputs(
             _TrainTestSplitFn.TEST_TAG, _TrainTestSplitFn.TRAIN_TAG)
 
-    (serialized_examples[_TrainTestSplitFn.TRAIN_TAG]
-     | "write train" >> WriteToTFRecord(
-         os.path.join(args.output_dir, "train"),
-         file_name_suffix=".tfrecords",
-         num_shards=args.num_shards_train))
-    (serialized_examples[_TrainTestSplitFn.TEST_TAG]
-     | "write test" >> WriteToTFRecord(
-         os.path.join(args.output_dir, "test"),
-         file_name_suffix=".tfrecords",
-         num_shards=args.num_shards_test))
+    if args.dataset_format == _JSON_FORMAT:
+        write_sink = WriteToText
+        file_name_suffix = ".json"
+        serialize_fn = json.dumps
+    else:
+        assert args.dataset_format == _TF_FORMAT
+        write_sink = WriteToTFRecord
+        file_name_suffix = ".tfrecord"
+        serialize_fn = _features_to_serialized_tf_example
+
+    for name, tag in [("train", _TrainTestSplitFn.TRAIN_TAG),
+                      ("test", _TrainTestSplitFn.TEST_TAG)]:
+
+        serialized_examples = examples[tag] | (
+            "serialize {} examples".format(name) >> beam.Map(serialize_fn))
+        (
+            serialized_examples | ("write " + name)
+            >> write_sink(
+                os.path.join(args.output_dir, name),
+                file_name_suffix=file_name_suffix,
+                num_shards=args.num_shards_train,
+            )
+        )
 
     result = p.run()
     result.wait_until_finish()

@@ -40,6 +40,7 @@ class CreateDataPipelineTest(unittest.TestCase):
                 "--runner=DirectRunner",
                 "--reddit_table=ignored",
                 "--output_dir=" + self._temp_dir,
+                "--dataset_format=TF",
                 "--num_shards_test=2",
                 "--num_shards_train=2",
                 "--min_length=4",
@@ -51,14 +52,14 @@ class CreateDataPipelineTest(unittest.TestCase):
 
         self.assertItemsEqual(
             [path.join(self._temp_dir, expected_file) for expected_file in
-             ["train-00000-of-00002.tfrecords",
-              "train-00001-of-00002.tfrecords"]],
+             ["train-00000-of-00002.tfrecord",
+              "train-00001-of-00002.tfrecord"]],
             glob(path.join(self._temp_dir, "train-*"))
         )
         self.assertItemsEqual(
             [path.join(self._temp_dir, expected_file) for expected_file in
-             ["test-00000-of-00002.tfrecords",
-              "test-00001-of-00002.tfrecords"]],
+             ["test-00000-of-00002.tfrecord",
+              "test-00001-of-00002.tfrecord"]],
             glob(path.join(self._temp_dir, "test-*"))
         )
 
@@ -120,6 +121,95 @@ class CreateDataPipelineTest(unittest.TestCase):
         test_examples = self._read_examples("test-*")
         self.assertItemsEqual(expected_test_examples, test_examples)
 
+    def test_run_json(self):
+        with open("reddit/testdata/simple_thread.json") as f:
+            comments = json.loads(f.read())
+
+        # Duplicate the thread with a different ID, chosing a link_id that
+        # will be put in the test set.
+        test_comments = []
+        for comment in comments:
+            test_comment = copy.copy(comment)
+            test_comment['link_id'] = "t3_testthread"
+            test_comments.append(test_comment)
+
+        create_data.run(
+            argv=[
+                "--runner=DirectRunner",
+                "--reddit_table=ignored",
+                "--output_dir=" + self._temp_dir,
+                "--dataset_format=JSON",
+                "--num_shards_test=2",
+                "--num_shards_train=2",
+                "--min_length=4",
+                "--max_length=5",
+                "--train_split=0.5",
+            ],
+            comments=(comments + test_comments)
+        )
+
+        self.assertItemsEqual(
+            [path.join(self._temp_dir, expected_file) for expected_file in
+             ["train-00000-of-00002.json",
+              "train-00001-of-00002.json"]],
+            glob(path.join(self._temp_dir, "train-*"))
+        )
+        self.assertItemsEqual(
+            [path.join(self._temp_dir, expected_file) for expected_file in
+             ["test-00000-of-00002.json",
+              "test-00001-of-00002.json"]],
+            glob(path.join(self._temp_dir, "test-*"))
+        )
+
+        train_examples = self._read_json_examples("train-*")
+        expected_train_examples = [
+            {
+                'context': "AAAA",
+                'context_author': "author-A",
+                'response': "BBBB",
+                'response_author': "author-B",
+                'subreddit': "subreddit-A",
+                'thread_id': 'thread-A',
+            },
+            {
+                'context/0': "AAAA",
+                'context': "BBBB",
+                'context_author': "author-B",
+                'response': "CCCC",
+                'response_author': "author-C",
+                'subreddit': "subreddit-A",
+                'thread_id': 'thread-A',
+            },
+            {
+                'context/0': "AAAA",
+                'context': "BBBB",
+                'context_author': "author-B",
+                'response': "DDDD",
+                'response_author': "author-D",
+                'subreddit': "subreddit-A",
+                'thread_id': 'thread-A',
+            },
+            {
+                'context/1': "AAAA",
+                'context/0': "BBBB",
+                'context': "DDDD",
+                'context_author': "author-D",
+                'response': "EEEE",
+                'response_author': "author-E",
+                'subreddit': "subreddit-A",
+                'thread_id': 'thread-A',
+            }
+        ]
+        self.assertItemsEqual(expected_train_examples, train_examples)
+
+        expected_test_examples = []
+        for example in expected_train_examples:
+            example['thread_id'] = "testthread"
+            expected_test_examples.append(example)
+
+        test_examples = self._read_json_examples("test-*")
+        self.assertItemsEqual(expected_test_examples, test_examples)
+
     def _read_examples(self, pattern):
         examples = []
         for file_name in glob(path.join(self._temp_dir, pattern)):
@@ -127,6 +217,13 @@ class CreateDataPipelineTest(unittest.TestCase):
                 example = tf.train.Example()
                 example.ParseFromString(record)
                 examples.append(example)
+        return examples
+
+    def _read_json_examples(self, pattern):
+        examples = []
+        for file_name in glob(path.join(self._temp_dir, pattern)):
+            for line in open(file_name):
+                examples.append(json.loads(line))
         return examples
 
     @staticmethod

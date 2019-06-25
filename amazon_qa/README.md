@@ -60,21 +60,23 @@ python amazon_qa/create_data.py \
   --output_dir ${DATADIR} \
   --runner DataflowRunner --temp_location ${DATADIR}/temp \
   --staging_location ${DATADIR}/staging \
-  --project ${PROJECT?}
+  --project ${PROJECT?} \
+  --dataset_format TF
 ```
+You may use `--dataset_format JSON` to output JSON examples, rather than serialized Tensorflow examples in TFRecords.
 
 Once the above is running, you can continue to monitor it in the terminal, or quit the process and follow the running job on the
 [dataflow admin page](https://console.cloud.google.com/dataflow).
 
 Please confirm that the statistics reported on the dataflow job page agree with the statistics reported above, to ensure you have a correct version of the dataset.
 
-The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/amazon_qa/YYYYMMDD/train-*-of-00100.tfrecords` and
-`gs://your-bucket/amazon_qa/YYYYMMDD/test-*-of-00010.tfrecords`.
+The dataset will be saved in the `$DATADIR` directory, as sharded train and test sets- `gs://your-bucket/amazon_qa/YYYYMMDD/train-*-of-00100.tfrecord` and
+`gs://your-bucket/amazon_qa/YYYYMMDD/test-*-of-00010.tfrecord`. (Files will be stored as `.json` shards when using `--dataset_format JSON`.)
 
-You can then use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
+For Tensorflow format, you can use [`tools/tfrutil.py`](/tools/tfrutil.py) to inspect the files. For example:
 
 ```bash
-python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00010.tfrecords
+python tools/tfrutil.py pp ${DATADIR?}/test-00000-of-00010.tfrecord
 ```
 
 (It may be faster to copy the tfrecord file locally first.) This will print examples like:

@@ -39,13 +39,17 @@ This repo contains scripts for creating datasets in a standard format -
 any dataset in this format is referred to elsewhere as simply a
 *conversational dataset*.
 
-Datasets are stored as [tensorflow record files](`https://www.tensorflow.org/tutorials/load_data/tf_records`) containing serialized [tensorflow example](https://www.tensorflow.org/tutorials/load_data/tf_records#data_types_for_tfexample) protocol buffers.
-The training set is stored as one collection of tensorflow record files, and
-the test set as another. Examples are shuffled randomly (and not necessarily reproducibly) within the tensorflow record files.
 
-The train/test split is always deterministic, so that whenever the dataset is generated, the same train/test split is created.
+Datasets are stored either as:
 
-Each tensorflow example contains a conversational context and a response that goes with that context. For example:
+* JSON text files, with one example per line
+* or as [Tensorflow record files](`https://www.tensorflow.org/tutorials/load_data/tf_records`) containing serialized [tensorflow example](https://www.tensorflow.org/tutorials/load_data/tf_records#data_types_for_tfexample) protocol buffers.
+
+
+The training set is stored as one collection of examples, and
+the test set as another. Examples are shuffled randomly (and not necessarily reproducibly) among the files. The train/test split is always deterministic, so that whenever the dataset is generated, the same train/test split is created.
+
+Each example contains a conversational context and a response that goes with that context. For example:
 
 ```javascript
 {
@@ -69,7 +73,29 @@ identified using additional features.
 
 ### Reading conversational datasets
 
-The [`tools/tfrutil.py`](tools/tfrutil.py) and [`baselines/run_baseline.py`](baselines/run_baseline.py) scripts demonstrate how to read a conversational dataset in Python, using functions from the tensorflow library.
+#### JSON format
+
+For use outside of tensorflow, the JSON format may be preferable. To get JSON format datasets, use `--dataset_format JSON` in the dataset's `create_data.py` script. Each line will contain a single JSON object.
+
+Below is some example python code for reading a JSON format dataset.
+
+```python
+import json
+from glob import glob
+
+
+for file_name in glob("dataset/train/*.json"):
+    for line in open(file_name):
+        example = json.loads(line)
+        # You can now access:
+        #   example['context']
+        #   example['response']
+        #   example['context/0'] etc.
+```
+
+#### Tensorflow format
+
+The [`tools/tfrutil.py`](tools/tfrutil.py) and [`baselines/run_baseline.py`](baselines/run_baseline.py) scripts demonstrate how to read a Tensorflow example format conversational dataset in Python, using functions from the tensorflow library.
 
 You can use [`tools/tfrutil.py`](tools/tfrutil.py) to compute the number of examples in a tensorflow record file:
 
@@ -118,7 +144,7 @@ into a tensorflow graph:
 
 num_extra_contexts = 10
 batch_size = 100
-pattern = "gs://your-bucket/dataset/train-*.tfrecords"
+pattern = "gs://your-bucket/dataset/train-*.tfrecord"
 
 if not tf.gfile.Glob(pattern):
     raise ValueError("No files matched pattern " + pattern)

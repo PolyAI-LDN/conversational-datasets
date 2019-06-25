@@ -6,6 +6,7 @@ For usage see README.md.
 
 import argparse
 import hashlib
+import json
 import logging
 import os
 import re
@@ -17,8 +18,12 @@ import apache_beam as beam
 import tensorflow as tf
 from apache_beam import pvalue
 from apache_beam.io import BigQuerySource, Read
+from apache_beam.io.textio import WriteToText
 from apache_beam.io.tfrecordio import WriteToTFRecord
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
+
+_TF_FORMAT = "TF"
+_JSON_FORMAT = "JSON"
 
 
 def _parse_args(argv=None):
@@ -43,6 +48,14 @@ def _parse_args(argv=None):
         "--output_dir",
         required=True,
         help="Google cloud storage output directory to write the dataset.",
+    )
+    parser.add_argument(
+        "--dataset_format",
+        choices={_TF_FORMAT, _JSON_FORMAT},
+        default="TF",
+        help="The dataset format to write. 'TF' for serialized tensorflow "
+             "examples in TFRecords. 'JSON' for text files with one JSON "
+             "object per line."
     )
     parser.add_argument(
         "--parent_depth",
@@ -140,7 +153,7 @@ def _should_skip(comment, min_length):
     return False
 
 
-def create_examples(thread, parent_depth, min_length):
+def create_examples(thread, parent_depth, min_length, format):
     """Creates serialized tensorflow examples from a reddit thread."""
     id_to_comment = {comment.id: comment for comment in list(thread)}
 
@@ -152,14 +165,14 @@ def create_examples(thread, parent_depth, min_length):
                 or _should_skip(context, min_length)):
             continue
 
-        example = tf.train.Example()
+        example = {}
+        example['subreddit'] = response.subreddit
+        example['thread_id'] = response.thread_id
+        example['context_author'] = context.author
+        example['response_author'] = response.author
+        example['context'] = context.body
+        example['response'] = response.body
 
-        _add_string_feature(example, "subreddit", response.subreddit)
-        _add_string_feature(example, "thread_id", response.thread_id)
-        _add_string_feature(example, "context_author", context.author)
-        _add_string_feature(example, "response_author", response.author)
-        _add_string_feature(example, "context", context.body)
-        _add_string_feature(example, "response", response.body)
         for i in range(parent_depth - 1):
             # Extra contexts start at index -3.
             index = -3 - i
@@ -168,11 +181,21 @@ def create_examples(thread, parent_depth, min_length):
             except IndexError:
                 break
 
-            _add_string_feature(
-                example, "context/{}".format(i),
-                id_to_comment[context_i].body)
+            example['context/{}'.format(i)] = id_to_comment[context_i].body
 
-        yield example.SerializeToString()
+        yield example
+
+
+def _features_to_serialized_tf_example(features):
+    """Convert a string dict to a serialized TF example.
+
+    The dictionary maps feature names (strings) to feature values (strings).
+    """
+    example = tf.train.Example()
+    for feature_name, feature_value in features.items():
+        example.features.feature[feature_name].bytes_list.value.append(
+            feature_value.encode("utf-8"))
+    return example.SerializeToString()
 
 
 def linear_paths(id_to_comment, parent_depth):
@@ -204,12 +227,6 @@ def linear_paths(id_to_comment, parent_depth):
         paths = new_paths
 
 
-def _add_string_feature(example, feature_name, value):
-    """Adds a string feature to a tensorflow example."""
-    example.features.feature[feature_name].bytes_list.value.append(
-        value.encode("utf-8"))
-
-
 def _shuffle(pcollection):
     """Shuffles the input pcollection."""
     pcollection |= "add random key" >> beam.Map(
@@ -220,7 +237,7 @@ def _shuffle(pcollection):
 
 
 class _TrainTestSplitFn(beam.DoFn):
-    """Splits an input PCollection of serialized examples into train and test.
+    """Splits an input PCollection of examples into train and test.
 
     This uses the thread id to compute the split, so that examples from the
     same thread are in the same set. The split is deterministic based on
@@ -235,17 +252,12 @@ class _TrainTestSplitFn(beam.DoFn):
         self._train_split = train_split
         self._num_buckets = num_buckets
 
-    def process(self, serialized_example):
-        example = tf.train.Example()
-        example.ParseFromString(serialized_example)
-
-        thread_id, = example.features.feature['thread_id'].bytes_list.value
-        split_value = self._split_value(thread_id)
-
+    def process(self, example):
+        split_value = self._split_value(example['thread_id'])
         split = (
             self.TRAIN_TAG if split_value < self._train_split else
             self.TEST_TAG)
-        yield pvalue.TaggedOutput(split, serialized_example)
+        yield pvalue.TaggedOutput(split, example)
 
     def _split_value(self, thread_id):
         """Compute a value from 0 to 1 used to compute the split."""
@@ -289,35 +301,42 @@ def run(argv=None, comments=None):
         "Group comments by thread ID" >> beam.GroupByKey())
     threads = threads | ("Get threads" >> beam.Map(lambda t: t[1]))
 
-    serialized_examples = threads | (
-        "Create TF examples" >> beam.FlatMap(
+    examples = threads | (
+        "Create {} examples".format(args.dataset_format) >> beam.FlatMap(
             partial(create_examples,
                     parent_depth=args.parent_depth,
-                    min_length=args.min_length)))
-    serialized_examples = _shuffle(serialized_examples)
+                    min_length=args.min_length,
+                    format=args.dataset_format,
+                    )))
+    examples = _shuffle(examples)
 
-    serialized_examples |= "split train and test" >> beam.ParDo(
-        _TrainTestSplitFn(args.train_split)
+    examples |= "split train and test" >> beam.ParDo(
+        _TrainTestSplitFn(train_split=args.train_split)
     ).with_outputs(_TrainTestSplitFn.TEST_TAG, _TrainTestSplitFn.TRAIN_TAG)
 
-    (
-        serialized_examples[_TrainTestSplitFn.TRAIN_TAG]
-        | "write train"
-        >> WriteToTFRecord(
-            os.path.join(args.output_dir, "train"),
-            file_name_suffix=".tfrecords",
-            num_shards=args.num_shards_train,
+    if args.dataset_format == _JSON_FORMAT:
+        write_sink = WriteToText
+        file_name_suffix = ".json"
+        serialize_fn = json.dumps
+    else:
+        assert args.dataset_format == _TF_FORMAT
+        write_sink = WriteToTFRecord
+        file_name_suffix = ".tfrecord"
+        serialize_fn = _features_to_serialized_tf_example
+
+    for name, tag in [("train", _TrainTestSplitFn.TRAIN_TAG),
+                      ("test", _TrainTestSplitFn.TEST_TAG)]:
+
+        serialized_examples = examples[tag] | (
+            "serialize {} examples".format(name) >> beam.Map(serialize_fn))
+        (
+            serialized_examples | ("write " + name)
+            >> write_sink(
+                os.path.join(args.output_dir, name),
+                file_name_suffix=file_name_suffix,
+                num_shards=args.num_shards_train,
+            )
         )
-    )
-    (
-        serialized_examples[_TrainTestSplitFn.TEST_TAG]
-        | "write test"
-        >> WriteToTFRecord(
-            os.path.join(args.output_dir, "test"),
-            file_name_suffix=".tfrecords",
-            num_shards=args.num_shards_test,
-        )
-    )
 
     result = p.run()
     result.wait_until_finish()
