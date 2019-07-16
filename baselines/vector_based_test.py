@@ -14,17 +14,75 @@ from baselines import vector_based
 
 class TfHubEncoderTest(unittest.TestCase):
     @patch("tensorflow_hub.Module")
-    def test_encode(self, mock_module_cls):
+    def test_encode_context(self, mock_module_cls):
         mock_module_cls.return_value = lambda x: tf.ones(
             [tf.shape(x)[0], 3])
         encoder = vector_based.TfHubEncoder("test_uri")
         mock_module_cls.assert_called_with("test_uri")
 
-        encodings = encoder.encode(["hello"])
+        encodings = encoder.encode_context(["hello"])
         np.testing.assert_allclose([[1, 1, 1]], encodings)
 
-        encodings = encoder.encode(["hello", "hi"])
+        encodings = encoder.encode_context(["hello", "hi"])
         np.testing.assert_allclose([[1, 1, 1], [1, 1, 1]], encodings)
+
+    @patch("tensorflow_hub.Module")
+    def test_encode_response(self, mock_module_cls):
+        mock_module_cls.return_value = lambda x: tf.ones(
+            [tf.shape(x)[0], 3])
+        encoder = vector_based.TfHubEncoder("test_uri")
+        mock_module_cls.assert_called_with("test_uri")
+
+        encodings = encoder.encode_response(["hello"])
+        np.testing.assert_allclose([[1, 1, 1]], encodings)
+
+        encodings = encoder.encode_response(["hello", "hi"])
+        np.testing.assert_allclose([[1, 1, 1], [1, 1, 1]], encodings)
+
+
+class TfHubEncoderDualTest(unittest.TestCase):
+    """Test using a dual encoder."""
+
+    @patch("tensorflow_hub.Module")
+    def test_encode_context(self, mock_module_cls):
+
+        def mock_fn(inputs, signature, as_dict):
+            self.assertTrue(as_dict)
+            self.assertIn(signature, {"question_encoder", "response_encoder"})
+            if signature == "question_encoder":
+                self.assertEqual(["input"], list(inputs.keys()))
+                return {'outputs': tf.ones([tf.shape(inputs['input'])[0], 3])}
+            else:
+                self.assertEqual({"input", "context"}, set(inputs.keys()))
+                return {'outputs': None}
+
+        mock_module_cls.return_value = mock_fn
+
+        encoder = vector_based.TfHubEncoder("test_uri", is_dual=True)
+        mock_module_cls.assert_called_with("test_uri")
+
+        encodings = encoder.encode_context(["hello"])
+        np.testing.assert_allclose([[1, 1, 1]], encodings)
+
+    @patch("tensorflow_hub.Module")
+    def test_encode_response(self, mock_module_cls):
+        def mock_fn(inputs, signature, as_dict):
+            self.assertTrue(as_dict)
+            self.assertIn(signature, {"question_encoder", "response_encoder"})
+            if signature == "response_encoder":
+                self.assertEqual({"input", "context"}, set(inputs.keys()))
+                return {'outputs': tf.ones([tf.shape(inputs['input'])[0], 3])}
+            else:
+                self.assertEqual(["input"], list(inputs.keys()))
+                return {'outputs': None}
+
+        mock_module_cls.return_value = mock_fn
+
+        encoder = vector_based.TfHubEncoder("test_uri", is_dual=True)
+        mock_module_cls.assert_called_with("test_uri")
+
+        encodings = encoder.encode_response(["hello"])
+        np.testing.assert_allclose([[1, 1, 1]], encodings)
 
 
 class BERTEncoderTest(unittest.TestCase):
@@ -44,7 +102,7 @@ class BERTEncoderTest(unittest.TestCase):
         os.unlink(cls.vocab_file)
 
     @patch("tensorflow_hub.Module")
-    def test_encode(self, mock_module_cls):
+    def test_encode_context(self, mock_module_cls):
 
         def mock_module(inputs=None, signature=None, as_dict=None):
             self.assertTrue(as_dict)
@@ -72,10 +130,10 @@ class BERTEncoderTest(unittest.TestCase):
 
         # Final encodings will just be the count of the tokens in each
         # sentence, repeated 3 times.
-        encodings = encoder.encode(["hello"])
+        encodings = encoder.encode_context(["hello"])
         np.testing.assert_allclose([[3, 3, 3]], encodings)
 
-        encodings = encoder.encode(["hello", "hello hi"])
+        encodings = encoder.encode_context(["hello", "hello hi"])
         np.testing.assert_allclose([[3, 3, 3], [4, 4, 4]], encodings)
 
 
@@ -85,7 +143,12 @@ class VectorSimilarityMethodTest(unittest.TestCase):
 
     def test_rank_responses(self):
         mock_encoder = mock.Mock()
-        mock_encoder.encode.return_value = np.asarray([
+        mock_encoder.encode_context.return_value = np.asarray([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 1, 1],
+        ], dtype=np.float32)
+        mock_encoder.encode_response.return_value = np.asarray([
             [1, 0, 0],
             [0, 1, 0],
             [0, 1, 1],
@@ -97,8 +160,10 @@ class VectorSimilarityMethodTest(unittest.TestCase):
             ["a", "b", "c"]
         )
         np.testing.assert_allclose([0, 1, 2], assignments)
-        mock_encoder.encode.assert_has_calls([
+        mock_encoder.encode_context.assert_has_calls([
             mock.call(["x", "y", "z"]),
+        ])
+        mock_encoder.encode_response.assert_has_calls([
             mock.call(["a", "b", "c"]),
         ])
 
@@ -110,17 +175,20 @@ class VectorMappingMethodTest(unittest.TestCase):
         def _random_encode(texts):
             return np.random.normal(size=(len(texts), 3))
 
-        mock_encoder.encode.side_effect = _random_encode
+        mock_encoder.encode_context.side_effect = _random_encode
+        mock_encoder.encode_response.side_effect = _random_encode
 
         method = vector_based.VectorMappingMethod(
             mock_encoder, learning_rates=[1], regularizers=[0])
 
         # Use 104 elements, so that the encoding must be batched.
         method.train(["context"] * 104, ["response"] * 104)
-        mock_encoder.encode.assert_has_calls([
+        mock_encoder.encode_context.assert_has_calls([
             mock.call(["context"] * 100),
-            mock.call(["response"] * 100),
             mock.call(["context"] * 4),
+        ])
+        mock_encoder.encode_response.assert_has_calls([
+            mock.call(["response"] * 100),
             mock.call(["response"] * 4),
         ])
         assignments = method.rank_responses(

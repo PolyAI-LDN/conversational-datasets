@@ -43,6 +43,11 @@ The parameters are learned on the training set, using the dot product loss from 
 
 The combination of the five embedding models with the two vector-based methods gives ten baseline methods: `USE_SIM`, `USE_MAP`, `USE_LARGE_SIM`, `USE_LARGE_MAP`, `ELMO_SIM`, `ELMO_MAP`, `BERT_SMALL_SIM`, `BERT_SMALL_MAP`, `BERT_LARGE_SIM` and `BERT_LARGE_MAP`.
 
+## Dual encoders
+
+
+[3] [Dual question/answer encoder version of the universal sentence encoder](https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/1).
+
 # Running the baselines
 
 ## Copy the data locally

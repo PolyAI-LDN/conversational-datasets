@@ -67,6 +67,9 @@ class Method(enum.Enum):
     BERT_SMALL_MAP = 11
     BERT_LARGE_MAP = 12
 
+    # Dual encoders.
+    USE_QA = 13
+
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
         if self == self.TF_IDF:
@@ -121,6 +124,12 @@ class Method(enum.Enum):
                 encoder=vector_based.BERTEncoder(
                     "https://tfhub.dev/google/"
                     "bert_uncased_L-24_H-1024_A-16/1"))
+        elif self == self.USE_QA:
+            return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/"
+                    "universal-sentence-encoder-multilingual-qa/1",
+                    is_dual=True))
         raise ValueError("Unknown method {}".format(self))
 
     def __str__(self):
