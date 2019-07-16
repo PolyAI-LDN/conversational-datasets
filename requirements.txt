@@ -77,5 +77,5 @@ termcolor==1.1.0
 tf-sentencepiece==0.1.82
 tqdm==4.31.1
 typing==3.6.6
-urllib3==1.24.1
+urllib3==1.24.2
 Werkzeug==0.14.1
