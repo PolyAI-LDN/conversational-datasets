@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 import bert.run_classifier
 import bert.tokenization
+import tf_sentencepiece  # NOQA: it is used when importing USE_QA.
 from baselines import method
 
 
@@ -22,16 +23,28 @@ class Encoder(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def encode(self, texts):
+    def encode_context(self, contexts):
         """Encode the given texts as vectors.
 
         Args:
-            texts: a list of N strings, to be encoded.
+            contexts: a list of N strings, to be encoded.
 
         Returns:
             an (N, d) numpy matrix of encodings.
         """
         pass
+
+    def encode_response(self, responses):
+        """Encode the given response texts as vectors.
+
+        Args:
+            responses: a list of N strings, to be encoded.
+
+        Returns:
+            an (N, d) numpy matrix of encodings.
+        """
+        # Default to using the context encoding.
+        return self.encode_context(responses)
 
 
 class TfHubEncoder(Encoder):
@@ -42,23 +55,48 @@ class TfHubEncoder(Encoder):
 
     Args:
         uri: (string) the tensorflow hub URI for the model.
+        is_dual: (bool) whether the model is a dual encoder. If so, it will
+            use the 'question_encoder' and 'response_encoder' signatures for
+            context and response encoding respectively.
     """
-    def __init__(self, uri):
+    def __init__(self, uri, is_dual=False):
         """Create a new `TfHubEncoder` object."""
         self._session = tf.Session(graph=tf.Graph())
         with self._session.graph.as_default():
             glog.info("Loading %s model from tensorflow hub", uri)
             embed_fn = tensorflow_hub.Module(uri)
             self._fed_texts = tf.placeholder(shape=[None], dtype=tf.string)
-            self._embeddings = embed_fn(self._fed_texts)
+            if not is_dual:
+                self._context_embeddings = self._response_embeddings = (
+                    embed_fn(self._fed_texts))
+            else:
+                self._context_embeddings = embed_fn(
+                    dict(input=self._fed_texts),
+                    signature="question_encoder",
+                    as_dict=True,
+                )['outputs']
+                empty_strings = tf.fill(
+                    tf.shape(self._fed_texts), ""
+                )
+                self._response_embeddings = embed_fn(
+                    dict(input=self._fed_texts, context=empty_strings),
+                    signature="response_encoder",
+                    as_dict=True,
+                )['outputs']
             init_ops = (
                 tf.global_variables_initializer(), tf.tables_initializer())
         glog.info("Initializing graph.")
         self._session.run(init_ops)
 
-    def encode(self, texts):
-        """Encode the given texts."""
-        return self._session.run(self._embeddings, {self._fed_texts: texts})
+    def encode_context(self, contexts):
+        """Encode the given texts as contexts."""
+        return self._session.run(
+            self._context_embeddings, {self._fed_texts: contexts})
+
+    def encode_response(self, responses):
+        """Encode the given texts as responses."""
+        return self._session.run(
+            self._response_embeddings, {self._fed_texts: responses})
 
 
 class BERTEncoder(Encoder):
@@ -106,9 +144,9 @@ class BERTEncoder(Encoder):
         glog.info("Initializing graph.")
         self._session.run(init_ops)
 
-    def encode(self, texts):
+    def encode_context(self, contexts):
         """Encode the given texts."""
-        return self._session.run(self._embeddings, self._feed_dict(texts))
+        return self._session.run(self._embeddings, self._feed_dict(contexts))
 
     @staticmethod
     def _create_tokenizer_from_hub_module(uri):
@@ -179,8 +217,8 @@ class VectorSimilarityMethod(method.BaselineMethod):
 
     def rank_responses(self, contexts, responses):
         """Rank the responses for each context, using cosine similarity."""
-        contexts_matrix = self._encoder.encode(contexts)
-        responses_matrix = self._encoder.encode(responses)
+        contexts_matrix = self._encoder.encode_context(contexts)
+        responses_matrix = self._encoder.encode_response(responses)
         responses_matrix /= np.linalg.norm(
             responses_matrix, axis=1, keepdims=True)
         similarities = np.matmul(contexts_matrix, responses_matrix.T)
@@ -243,8 +281,10 @@ class VectorMappingMethod(method.BaselineMethod):
         for i in tqdm(range(0, len(contexts), self._ENCODING_BATCH_SIZE)):
             contexts_batch = contexts[i:i + self._ENCODING_BATCH_SIZE]
             responses_batch = responses[i:i + self._ENCODING_BATCH_SIZE]
-            context_encodings.append(self._encoder.encode(contexts_batch))
-            response_encodings.append(self._encoder.encode(responses_batch))
+            context_encodings.append(
+                self._encoder.encode_context(contexts_batch))
+            response_encodings.append(
+                self._encoder.encode_response(responses_batch))
 
         context_encodings = np.concatenate(
             context_encodings).astype(np.float32)
@@ -449,8 +489,10 @@ class VectorMappingMethod(method.BaselineMethod):
         similarities = self._session.run(
             self._similarities,
             {
-                self._fed_context_encodings: self._encoder.encode(contexts),
-                self._fed_response_encodings: self._encoder.encode(responses),
+                self._fed_context_encodings: self._encoder.encode_context(
+                    contexts),
+                self._fed_response_encodings: self._encoder.encode_response(
+                    responses),
             }
         )
         return np.argmax(similarities, axis=1)
