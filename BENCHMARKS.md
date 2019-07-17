@@ -28,7 +28,8 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | BERT_SMALL_MAP   | 24.5%              |
 | BERT_LARGE_SIM   | 14.8%         	    |
 | BERT_LARGE_MAP   | 24.0%         	    |
-| USE_QA           | 46.3%              |
+| USE_QA_SIM       | 46.3%              |
+| USE_QA_MAP       | 46.6%              |
 | **Other models** |                    |
 | PolyAI-Encoder [1]	  | 61.3%         |
 | PolyAI subword encoder [2] | 68.2%    |
@@ -51,7 +52,8 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | BERT_SMALL_MAP   | 17.5%             	|
 | BERT_LARGE_SIM   | 12.2%             	|
 | BERT_LARGE_MAP   | 16.8%           	  |
-| USE_QA           | 16.8%              |
+| USE_QA_SIM       | 16.8%              |
+| USE_QA_MAP       | 17.1%              |
 | **Other models** |                    |
 | PolyAI-Encoder [1]	  | 30.6%             	|
 
@@ -73,7 +75,8 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | BERT_SMALL_MAP   | 45.8%             	|
 | BERT_LARGE_SIM   | 25.9%             	|
 | BERT_LARGE_MAP   | 44.1%           	  |
-| USE_QA           | 67.0%              |
+| USE_QA_SIM       | 67.0%              |
+| USE_QA_MAP       | 70.7%              |
 | **Other models** |                    |
 | PolyAI-Encoder [1]	  | 84.2%             	|
 
