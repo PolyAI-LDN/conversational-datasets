@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Command line utilities for maniuplating tfrecords files.
+"""Command line utilities for manipulating tfrecords files.
 
 Usage:
 
 To count the number of examples in a tfrecord file:
 
     python tfrutil.py size train-00999-of-01000.tfrecords
+
+To sample 10000 examples from a file pattern to an output file:
+
+    python tfrutil.py sample 10000 train-*-of-01000.tfrecords \
+        train-sampled.tfrecords
 
 To pretty print the contents of a tfrecord file:
 
@@ -16,6 +21,7 @@ This can accept gs:// file paths, as well as local files.
 
 
 import codecs
+import random
 import sys
 
 import click
@@ -25,7 +31,7 @@ import tensorflow as tf
 
 @click.group()
 def _cli():
-    """Command line utilities for maniuplating tfrecords files."""
+    """Command line utilities for manipulating tfrecords files."""
     pass
 
 
@@ -37,6 +43,45 @@ def _size(path):
     for _ in tf.python_io.tf_record_iterator(path):
         i += 1
     print(i)
+
+
+@_cli.command(name="sample")
+@click.argument("sample_size", type=int, required=True, nargs=1)
+@click.argument("file_patterns", type=str, required=True, nargs=-1)
+@click.argument("out", type=str, required=True, nargs=1)
+def _sample(sample_size, file_patterns, out):
+    file_paths = []
+    for file_pattern in file_patterns:
+        file_paths += tf.gfile.Glob(file_pattern)
+
+    random.shuffle(file_paths)
+
+    # Try to read twice as many examples as requested from the files, reading
+    # the files in a random order.
+    buffer_size = int(2 * sample_size)
+    examples = []
+    for file_name in file_paths:
+        for example in tf.python_io.tf_record_iterator(file_name):
+            examples.append(example)
+            if len(examples) == buffer_size:
+                break
+        if len(examples) == buffer_size:
+            break
+
+    if len(examples) < sample_size:
+        tf.logging.warning(
+            "Not enough examples to sample from. Found %i but requested %i.",
+            len(examples), sample_size,
+        )
+        sampled_examples = examples
+    else:
+        sampled_examples = random.sample(examples, sample_size)
+
+    with tf.python_io.TFRecordWriter(out) as record_writer:
+        for example in sampled_examples:
+            record_writer.write(example)
+
+    print("Wrote %i examples to %s." % (len(sampled_examples), out))
 
 
 @_cli.command(name="pp")
