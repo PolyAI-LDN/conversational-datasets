@@ -45,16 +45,15 @@ The combination of the five embedding models with the two vector-based methods g
 
 ## Dual encoders
 
-
-[3] [Dual question/answer encoder version of the universal sentence encoder](https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/1).
+The [dual question/answer encoder version of the universal sentence encoder](https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/1) is also implemented as a baseline, termed `USE_QA`. This use a separate encoding for input and response
 
 # Running the baselines
 
-## Copy the data locally
+## Get the data
 
-Before running the baselines, it may be beneficial to copy the data locally. This will speed up reading the data, but it is not necessary if you run these on a Google cloud machine in the correct region.
+To get the standard random sampling of the train and test sets, please get in touch with [Matt](https://github.com/matthen).
 
-If the dataset is stored in `$DATADIR`, a Google cloud storage path such as `gs://your-bucket/reddit/YYYYMMDD`, then copy a shard of the training set and the test set:
+You can also generate the data yourself, and then copy it locally, though this may result in slightly different results:
 
 ```bash
 mkdir data
@@ -67,6 +66,8 @@ For Amazon QA data, you will need to copy two shards of the test set to get enou
 This provides a random subset of the train and test set to use for the baselines. Recall that conversational datasets are always randomly shuffled and sharded.
 
 ## Run the baselines
+
+We recommend using [`run_baselines.ipynb`](run_baselines.ipynb) to run the baselines on Google Colab, using a free GPU.
 
 When running vector-based methods, make use of tensorflow hub's caching to speed up results:
 
@@ -84,5 +85,3 @@ python baselines/run_baseline.py  \
 ```
 
 Note that the `USE_LARGE`, `ELMO` and all `BERT`-based models baselines are slow, and may benefit from faster hardware. For these methods set `--eval_num_batches 100`.
-
-The [`run_baselines.sh`](run_baselines.sh) script runs all the baselines on all the datasets.
