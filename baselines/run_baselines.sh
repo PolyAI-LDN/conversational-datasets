@@ -23,8 +23,8 @@ for DATASET in reddit os amazon; do
 
     python baselines/run_baseline.py  \
       --method "${METHOD?}" \
-      --train_dataset "data/${DATASET?}-train*" \
-      --test_dataset "data/${DATASET?}-test*" \
+      --train_dataset "data/${DATASET?}-train-sampled" \
+      --test_dataset "data/${DATASET?}-test-sampled" \
       --output_file "${OUTPUT_FILE?}" \
       --eval_num_batches "${EVAL_NUM_BATCHES?}"
 
