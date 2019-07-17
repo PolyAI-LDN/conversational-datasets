@@ -23,6 +23,7 @@ The [vector-based methods](vector_based.py) use publicly available neural networ
 * [ELMO](https://tfhub.dev/google/elmo/1) - the Embeddings from Language Models approach
 * [BERT_SMALL](https://tfhub.dev/google/bert_uncased_L-12_H-768_A-12/1) - the Bidirectional Encoder Representations from Transformers approach
 * [BERT_LARGE](https://tfhub.dev/google/bert_uncased_L-24_H-1024_A-16/1) - a larger version of BERT
+* [USE_QA](https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/1) - The dual question/answer encoder version of the universal sentence encoder. Note this encodes contexts and responses using separate subnetworks, and `USE_QA_SIM` amounts to ranking with the pre-trained dot-product score.
 
 all of which are loaded from Tensorflow Hub.
 
@@ -43,9 +44,6 @@ The parameters are learned on the training set, using the dot product loss from 
 
 The combination of the five embedding models with the two vector-based methods gives ten baseline methods: `USE_SIM`, `USE_MAP`, `USE_LARGE_SIM`, `USE_LARGE_MAP`, `ELMO_SIM`, `ELMO_MAP`, `BERT_SMALL_SIM`, `BERT_SMALL_MAP`, `BERT_LARGE_SIM` and `BERT_LARGE_MAP`.
 
-## Dual encoders
-
-The [dual question/answer encoder version of the universal sentence encoder](https://tfhub.dev/google/universal-sentence-encoder-multilingual-qa/1) is also implemented as a baseline, termed `USE_QA`. This use a separate encoding for input and response
 
 # Running the baselines
 

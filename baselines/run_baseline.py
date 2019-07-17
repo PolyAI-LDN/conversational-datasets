@@ -59,16 +59,15 @@ class Method(enum.Enum):
     ELMO_SIM = 5
     BERT_SMALL_SIM = 6
     BERT_LARGE_SIM = 7
+    USE_QA_SIM = 8
 
     # Vector mapping methods.
-    USE_MAP = 8
-    USE_LARGE_MAP = 9
-    ELMO_MAP = 10
-    BERT_SMALL_MAP = 11
-    BERT_LARGE_MAP = 12
-
-    # Dual encoders.
-    USE_QA = 13
+    USE_MAP = 9
+    USE_LARGE_MAP = 10
+    ELMO_MAP = 11
+    BERT_SMALL_MAP = 12
+    BERT_LARGE_MAP = 13
+    USE_QA_MAP = 14
 
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
@@ -124,8 +123,14 @@ class Method(enum.Enum):
                 encoder=vector_based.BERTEncoder(
                     "https://tfhub.dev/google/"
                     "bert_uncased_L-24_H-1024_A-16/1"))
-        elif self == self.USE_QA:
+        elif self == self.USE_QA_SIM:
             return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.TfHubEncoder(
+                    "https://tfhub.dev/google/"
+                    "universal-sentence-encoder-multilingual-qa/1",
+                    is_dual=True))
+        elif self == self.USE_QA_MAP:
+            return vector_based.VectorMappingMethod(
                 encoder=vector_based.TfHubEncoder(
                     "https://tfhub.dev/google/"
                     "universal-sentence-encoder-multilingual-qa/1",
