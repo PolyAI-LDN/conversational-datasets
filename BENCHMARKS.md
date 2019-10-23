@@ -78,7 +78,9 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | USE_QA_SIM       | 67.0%              |
 | USE_QA_MAP       | 70.7%              |
 | **Other models** |                    |
-| PolyAI-Encoder [1]	  | 84.2%             	|
+| PolyAI-Encoder [1]	  | 71.3%             	|
+
+Note the PolyAI-Encoder result here differs from the original paper, as we found a bug in the evaluation. Updated versions of the papers are in progress.
 
 
 # References
