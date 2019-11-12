@@ -84,6 +84,7 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | ConveRT (not fine-tuned) MAP [2] | 71.6%    |
 | ConveRT (fine-tuned) | 84.3% |
 
+Note the result for [1] here differs from the original paper, as we found a bug in the evaluation. Updated versions of the papers are in progress.
 
 # References
 
