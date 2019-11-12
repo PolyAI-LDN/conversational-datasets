@@ -60,7 +60,7 @@ class Method(enum.Enum):
     BERT_SMALL_SIM = 6
     BERT_LARGE_SIM = 7
     USE_QA_SIM = 8
-    POLYAI_SIM = 9
+    CONVERT_SIM = 9
 
     # Vector mapping methods.
     USE_MAP = 10
@@ -69,7 +69,7 @@ class Method(enum.Enum):
     BERT_SMALL_MAP = 13
     BERT_LARGE_MAP = 14
     USE_QA_MAP = 15
-    POLYAI_MAP = 16
+    CONVERT_MAP = 16
 
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
@@ -137,10 +137,12 @@ class Method(enum.Enum):
                     "universal-sentence-encoder-multilingual-qa/1"))
         elif self == self.POLYAI_SIM:
             return vector_based.VectorSimilarityMethod(
-                encoder=vector_based.PolyAIDualEncoder(""))
+                encoder=vector_based.ConveRTEncoder(
+                    "http://models.poly-ai.com/convert/v1/model.tar.gz"))
         elif self == self.POLYAI_MAP:
             return vector_based.VectorMappingMethod(
-                encoder=vector_based.PolyAIDualEncoder(""))
+                encoder=vector_based.ConveRTEncoder(
+                    "http://models.poly-ai.com/convert/v1/model.tar.gz"))
         raise ValueError("Unknown method {}".format(self))
 
     def __str__(self):

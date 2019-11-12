@@ -85,22 +85,22 @@ class USEDualEncoderTest(unittest.TestCase):
         np.testing.assert_allclose([[1, 1, 1]], encodings)
 
 
-class PolyAIDualEncoderTest(unittest.TestCase):
-    """Test PolyAIDualEncoder."""
+class ConveRTEncoderTest(unittest.TestCase):
+    """Test ConveRTEncoder."""
 
     @patch("tensorflow_hub.Module")
     def test_encode_context(self, mock_module_cls):
 
         def mock_fn(input, signature=None):
-            self.assertIn(signature, {None, "encode_response"})
+            self.assertIn(signature, {"encode_context", "encode_response"})
             self.assertIsInstance(input, tf.Tensor)
             self.assertEqual(input.dtype, tf.string)
-            if signature is None:
+            if signature == "encode_context":
                 return tf.ones([tf.shape(input)[0], 3])
 
         mock_module_cls.return_value = mock_fn
 
-        encoder = vector_based.PolyAIDualEncoder("test_uri")
+        encoder = vector_based.ConveRTEncoder("test_uri")
         mock_module_cls.assert_called_with("test_uri")
 
         encodings = encoder.encode_context(["hello"])
@@ -109,7 +109,7 @@ class PolyAIDualEncoderTest(unittest.TestCase):
     @patch("tensorflow_hub.Module")
     def test_encode_response(self, mock_module_cls):
         def mock_fn(input, signature=None):
-            self.assertIn(signature, {None, "encode_response"})
+            self.assertIn(signature, {"encode_context", "encode_response"})
             self.assertIsInstance(input, tf.Tensor)
             self.assertEqual(input.dtype, tf.string)
             if signature == "encode_response":
@@ -117,7 +117,7 @@ class PolyAIDualEncoderTest(unittest.TestCase):
 
         mock_module_cls.return_value = mock_fn
 
-        encoder = vector_based.PolyAIDualEncoder("test_uri")
+        encoder = vector_based.ConveRTEncoder("test_uri")
         mock_module_cls.assert_called_with("test_uri")
 
         encodings = encoder.encode_response(["hello"])

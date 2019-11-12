@@ -118,20 +118,23 @@ class USEDualEncoder(Encoder):
             self._response_embeddings, {self._fed_texts: responses})
 
 
-class PolyAIDualEncoder(Encoder):
-    """A dual encoder following the POLYAI signatures.
+class ConveRTEncoder(Encoder):
+    """The ConveRT encoder.
+
+    See https://github.com/PolyAI-LDN/polyai-models.
 
     Args:
         uri: (string) the tensorflow hub URI for the model.
     """
     def __init__(self, uri):
-        """Create a new `PolyAIDualEncoder` object."""
+        """Create a new `ConveRTEncoder` object."""
         self._session = tf.Session(graph=tf.Graph())
         with self._session.graph.as_default():
             glog.info("Loading %s model from tensorflow hub", uri)
             embed_fn = tensorflow_hub.Module(uri)
             self._fed_texts = tf.placeholder(shape=[None], dtype=tf.string)
-            self._context_embeddings = embed_fn(self._fed_texts)
+            self._context_embeddings = embed_fn(
+                self._fed_texts, signature="encode_context")
             self._response_embeddings = embed_fn(
                 self._fed_texts, signature="encode_response")
             init_ops = (
