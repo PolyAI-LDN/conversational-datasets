@@ -135,11 +135,11 @@ class Method(enum.Enum):
                 encoder=vector_based.USEDualEncoder(
                     "https://tfhub.dev/google/"
                     "universal-sentence-encoder-multilingual-qa/1"))
-        elif self == self.POLYAI_SIM:
+        elif self == self.CONVERT_SIM:
             return vector_based.VectorSimilarityMethod(
                 encoder=vector_based.ConveRTEncoder(
                     "http://models.poly-ai.com/convert/v1/model.tar.gz"))
-        elif self == self.POLYAI_MAP:
+        elif self == self.CONVERT_MAP:
             return vector_based.VectorMappingMethod(
                 encoder=vector_based.ConveRTEncoder(
                     "http://models.poly-ai.com/convert/v1/model.tar.gz"))
