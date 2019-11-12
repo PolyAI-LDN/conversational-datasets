@@ -60,14 +60,16 @@ class Method(enum.Enum):
     BERT_SMALL_SIM = 6
     BERT_LARGE_SIM = 7
     USE_QA_SIM = 8
+    CONVERT_SIM = 9
 
     # Vector mapping methods.
-    USE_MAP = 9
-    USE_LARGE_MAP = 10
-    ELMO_MAP = 11
-    BERT_SMALL_MAP = 12
-    BERT_LARGE_MAP = 13
-    USE_QA_MAP = 14
+    USE_MAP = 10
+    USE_LARGE_MAP = 11
+    ELMO_MAP = 12
+    BERT_SMALL_MAP = 13
+    BERT_LARGE_MAP = 14
+    USE_QA_MAP = 15
+    CONVERT_MAP = 16
 
     def to_method_object(self):
         """Convert the enum to an instance of `BaselineMethod`."""
@@ -125,16 +127,22 @@ class Method(enum.Enum):
                     "bert_uncased_L-24_H-1024_A-16/1"))
         elif self == self.USE_QA_SIM:
             return vector_based.VectorSimilarityMethod(
-                encoder=vector_based.TfHubEncoder(
+                encoder=vector_based.USEDualEncoder(
                     "https://tfhub.dev/google/"
-                    "universal-sentence-encoder-multilingual-qa/1",
-                    is_dual=True))
+                    "universal-sentence-encoder-multilingual-qa/1"))
         elif self == self.USE_QA_MAP:
             return vector_based.VectorMappingMethod(
-                encoder=vector_based.TfHubEncoder(
+                encoder=vector_based.USEDualEncoder(
                     "https://tfhub.dev/google/"
-                    "universal-sentence-encoder-multilingual-qa/1",
-                    is_dual=True))
+                    "universal-sentence-encoder-multilingual-qa/1"))
+        elif self == self.CONVERT_SIM:
+            return vector_based.VectorSimilarityMethod(
+                encoder=vector_based.ConveRTEncoder(
+                    "http://models.poly-ai.com/convert/v1/model.tar.gz"))
+        elif self == self.CONVERT_MAP:
+            return vector_based.VectorMappingMethod(
+                encoder=vector_based.ConveRTEncoder(
+                    "http://models.poly-ai.com/convert/v1/model.tar.gz"))
         raise ValueError("Unknown method {}".format(self))
 
     def __str__(self):

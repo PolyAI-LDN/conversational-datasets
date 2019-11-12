@@ -40,8 +40,8 @@ class TfHubEncoderTest(unittest.TestCase):
         np.testing.assert_allclose([[1, 1, 1], [1, 1, 1]], encodings)
 
 
-class TfHubEncoderDualTest(unittest.TestCase):
-    """Test using a dual encoder."""
+class USEDualEncoderTest(unittest.TestCase):
+    """Test USEDualEncoder."""
 
     @patch("tensorflow_hub.Module")
     def test_encode_context(self, mock_module_cls):
@@ -58,7 +58,7 @@ class TfHubEncoderDualTest(unittest.TestCase):
 
         mock_module_cls.return_value = mock_fn
 
-        encoder = vector_based.TfHubEncoder("test_uri", is_dual=True)
+        encoder = vector_based.USEDualEncoder("test_uri")
         mock_module_cls.assert_called_with("test_uri")
 
         encodings = encoder.encode_context(["hello"])
@@ -78,7 +78,46 @@ class TfHubEncoderDualTest(unittest.TestCase):
 
         mock_module_cls.return_value = mock_fn
 
-        encoder = vector_based.TfHubEncoder("test_uri", is_dual=True)
+        encoder = vector_based.USEDualEncoder("test_uri")
+        mock_module_cls.assert_called_with("test_uri")
+
+        encodings = encoder.encode_response(["hello"])
+        np.testing.assert_allclose([[1, 1, 1]], encodings)
+
+
+class ConveRTEncoderTest(unittest.TestCase):
+    """Test ConveRTEncoder."""
+
+    @patch("tensorflow_hub.Module")
+    def test_encode_context(self, mock_module_cls):
+
+        def mock_fn(input, signature=None):
+            self.assertIn(signature, {"encode_context", "encode_response"})
+            self.assertIsInstance(input, tf.Tensor)
+            self.assertEqual(input.dtype, tf.string)
+            if signature == "encode_context":
+                return tf.ones([tf.shape(input)[0], 3])
+
+        mock_module_cls.return_value = mock_fn
+
+        encoder = vector_based.ConveRTEncoder("test_uri")
+        mock_module_cls.assert_called_with("test_uri")
+
+        encodings = encoder.encode_context(["hello"])
+        np.testing.assert_allclose([[1, 1, 1]], encodings)
+
+    @patch("tensorflow_hub.Module")
+    def test_encode_response(self, mock_module_cls):
+        def mock_fn(input, signature=None):
+            self.assertIn(signature, {"encode_context", "encode_response"})
+            self.assertIsInstance(input, tf.Tensor)
+            self.assertEqual(input.dtype, tf.string)
+            if signature == "encode_response":
+                return tf.ones([tf.shape(input)[0], 3])
+
+        mock_module_cls.return_value = mock_fn
+
+        encoder = vector_based.ConveRTEncoder("test_uri")
         mock_module_cls.assert_called_with("test_uri")
 
         encodings = encoder.encode_response(["hello"])

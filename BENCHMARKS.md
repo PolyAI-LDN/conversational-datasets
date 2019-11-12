@@ -31,8 +31,8 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | USE_QA_SIM       | 46.3%              |
 | USE_QA_MAP       | 46.6%              |
 | **Other models** |                    |
-| PolyAI-Encoder [1]	  | 61.3%         |
-| PolyAI subword encoder [2] | 68.2%    |
+| N-gram dual-encoder [1]	  | 61.3%         |
+| ConveRT [2] | 68.3%    |
 
 
 ## OpenSubtitles
@@ -55,8 +55,9 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | USE_QA_SIM       | 16.8%              |
 | USE_QA_MAP       | 17.1%              |
 | **Other models** |                    |
-| PolyAI-Encoder [1]	  | 30.6%             	|
-
+| Fine-tuned N-gram dual-encoder [1]  | 30.6%             	|
+| ConveRT (not fine-tuned) [2] | 21.5%    |
+| ConveRT (not fine-tuned) MAP [2] | 23.1%    |
 
 ## AmazonQA
 
@@ -78,12 +79,14 @@ These are results on the data from 2015 to 2018 inclusive,  (`TABLE_REGEX="^201[
 | USE_QA_SIM       | 67.0%              |
 | USE_QA_MAP       | 70.7%              |
 | **Other models** |                    |
-| PolyAI-Encoder [1]	  | 71.3%             	|
+| N-gram dual-encoder [1]  | 71.3%             	|
+| ConveRT (not fine-tuned) [2] | 67.0%    |
+| ConveRT (not fine-tuned) MAP [2] | 71.6%    |
+| ConveRT (fine-tuned) | 84.3% |
 
-Note the PolyAI-Encoder result here differs from the original paper, as we found a bug in the evaluation. Updated versions of the papers are in progress.
-
+Note the result for [1] here differs from the original paper, as we found a bug in the evaluation. Updated versions of the papers are in progress.
 
 # References
 
-[1] [A Repository of Conversational Datasets](https://arxiv.org/abs/1904.06472). Henderson et al. arXiv pre-print 2019.
-[2] An encoder model leveraging deep transformer-style attention layers. Work under review.
+[1] [A Repository of Conversational Datasets](https://arxiv.org/abs/1904.06472). Henderson et al. Proceedings of the Workshop on NLP for Conversational AI, 2019.
+[2] [ConveRT: Efficient and Accurate Conversational Representations from Transformers](https://arxiv.org/abs/1911.03688). Henderson et al. arXiv pre-print 2019. These results can be reproduced with `baselines/run_baseline.py --method CONVERT_[SIM|MAP]`.

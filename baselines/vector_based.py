@@ -9,12 +9,13 @@ import glog
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub
+import tensorflow_text  # NOQA: required for PolyAI encoders.
+import tf_sentencepiece  # NOQA: it is used when importing USE_QA.
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 import bert.run_classifier
 import bert.tokenization
-import tf_sentencepiece  # NOQA: it is used when importing USE_QA.
 from baselines import method
 
 
@@ -55,34 +56,87 @@ class TfHubEncoder(Encoder):
 
     Args:
         uri: (string) the tensorflow hub URI for the model.
-        is_dual: (bool) whether the model is a dual encoder. If so, it will
-            use the 'question_encoder' and 'response_encoder' signatures for
-            context and response encoding respectively.
     """
-    def __init__(self, uri, is_dual=False):
+    def __init__(self, uri):
         """Create a new `TfHubEncoder` object."""
         self._session = tf.Session(graph=tf.Graph())
         with self._session.graph.as_default():
             glog.info("Loading %s model from tensorflow hub", uri)
             embed_fn = tensorflow_hub.Module(uri)
             self._fed_texts = tf.placeholder(shape=[None], dtype=tf.string)
-            if not is_dual:
-                self._context_embeddings = self._response_embeddings = (
-                    embed_fn(self._fed_texts))
-            else:
-                self._context_embeddings = embed_fn(
-                    dict(input=self._fed_texts),
-                    signature="question_encoder",
-                    as_dict=True,
-                )['outputs']
-                empty_strings = tf.fill(
-                    tf.shape(self._fed_texts), ""
-                )
-                self._response_embeddings = embed_fn(
-                    dict(input=self._fed_texts, context=empty_strings),
-                    signature="response_encoder",
-                    as_dict=True,
-                )['outputs']
+            self._context_embeddings = embed_fn(self._fed_texts)
+            init_ops = (
+                tf.global_variables_initializer(), tf.tables_initializer())
+        glog.info("Initializing graph.")
+        self._session.run(init_ops)
+
+    def encode_context(self, contexts):
+        """Encode the given texts."""
+        return self._session.run(
+            self._context_embeddings, {self._fed_texts: contexts})
+
+
+class USEDualEncoder(Encoder):
+    """A dual encoder following the USE_QA signatures.
+
+    Args:
+        uri: (string) the tensorflow hub URI for the model.
+    """
+    def __init__(self, uri):
+        """Create a new `USEDualEncoder` object."""
+        self._session = tf.Session(graph=tf.Graph())
+        with self._session.graph.as_default():
+            glog.info("Loading %s model from tensorflow hub", uri)
+            embed_fn = tensorflow_hub.Module(uri)
+            self._fed_texts = tf.placeholder(shape=[None], dtype=tf.string)
+            self._context_embeddings = embed_fn(
+                dict(input=self._fed_texts),
+                signature="question_encoder",
+                as_dict=True,
+            )['outputs']
+            empty_strings = tf.fill(
+                tf.shape(self._fed_texts), ""
+            )
+            self._response_embeddings = embed_fn(
+                dict(input=self._fed_texts, context=empty_strings),
+                signature="response_encoder",
+                as_dict=True,
+            )['outputs']
+            init_ops = (
+                tf.global_variables_initializer(), tf.tables_initializer())
+        glog.info("Initializing graph.")
+        self._session.run(init_ops)
+
+    def encode_context(self, contexts):
+        """Encode the given texts as contexts."""
+        return self._session.run(
+            self._context_embeddings, {self._fed_texts: contexts})
+
+    def encode_response(self, responses):
+        """Encode the given texts as responses."""
+        return self._session.run(
+            self._response_embeddings, {self._fed_texts: responses})
+
+
+class ConveRTEncoder(Encoder):
+    """The ConveRT encoder.
+
+    See https://github.com/PolyAI-LDN/polyai-models.
+
+    Args:
+        uri: (string) the tensorflow hub URI for the model.
+    """
+    def __init__(self, uri):
+        """Create a new `ConveRTEncoder` object."""
+        self._session = tf.Session(graph=tf.Graph())
+        with self._session.graph.as_default():
+            glog.info("Loading %s model from tensorflow hub", uri)
+            embed_fn = tensorflow_hub.Module(uri)
+            self._fed_texts = tf.placeholder(shape=[None], dtype=tf.string)
+            self._context_embeddings = embed_fn(
+                self._fed_texts, signature="encode_context")
+            self._response_embeddings = embed_fn(
+                self._fed_texts, signature="encode_response")
             init_ops = (
                 tf.global_variables_initializer(), tf.tables_initializer())
         glog.info("Initializing graph.")
