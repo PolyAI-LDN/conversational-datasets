@@ -180,10 +180,6 @@ def _evaluate_method(method, recall_k, contexts, responses):
                 "but saw {}".format(recall_k, predictions.shape))
         accuracy_numerator += np.equal(predictions, permutation).mean()
         accuracy_denominator += 1.0
-        glog.info(
-            "running accuracy: %.1f",
-            100 * accuracy_numerator / accuracy_denominator
-        )
 
     accuracy = 100 * accuracy_numerator / accuracy_denominator
     return accuracy
