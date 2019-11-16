@@ -89,4 +89,5 @@ Note the result for [1] here differs from the original paper, as we found a bug 
 # References
 
 [1] [A Repository of Conversational Datasets](https://arxiv.org/abs/1904.06472). Henderson et al. Proceedings of the Workshop on NLP for Conversational AI, 2019.
+
 [2] [ConveRT: Efficient and Accurate Conversational Representations from Transformers](https://arxiv.org/abs/1911.03688). Henderson et al. arXiv pre-print 2019. These results can be reproduced with `baselines/run_baseline.py --method CONVERT_[SIM|MAP]`.
