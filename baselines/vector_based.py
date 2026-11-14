@@ -273,8 +273,10 @@ class VectorSimilarityMethod(method.BaselineMethod):
         """Rank the responses for each context, using cosine similarity."""
         contexts_matrix = self._encoder.encode_context(contexts)
         responses_matrix = self._encoder.encode_response(responses)
-        responses_matrix /= np.linalg.norm(
+        response_norms = np.linalg.norm(
             responses_matrix, axis=1, keepdims=True)
+        responses_matrix = responses_matrix / np.where(
+            response_norms == 0, 1, response_norms)
         similarities = np.matmul(contexts_matrix, responses_matrix.T)
         return np.argmax(similarities, axis=1)
 
