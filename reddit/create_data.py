@@ -254,9 +254,10 @@ class _TrainTestSplitFn(beam.DoFn):
 
     def process(self, example):
         split_value = self._split_value(example['thread_id'])
-        split = (
-            self.TRAIN_TAG if split_value < self._train_split else
-            self.TEST_TAG)
+        if self._train_split == 1 or split_value < self._train_split:
+            split = self.TRAIN_TAG
+        else:
+            split = self.TEST_TAG
         yield pvalue.TaggedOutput(split, example)
 
     def _split_value(self, thread_id):
