@@ -11,7 +11,7 @@ import tensorflow as tf
 
 from opensubtitles import create_data
 
-_TRAIN_FILE = "\n".join([
+_TRAIN_FILE = "\r\n".join([
     "matt: AAAA",  # words followed by colons are stripped.
     "[skip]",  # text in brackets is removed.
     "BBBB",
