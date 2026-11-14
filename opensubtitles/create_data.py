@@ -125,7 +125,7 @@ def _preprocess_line(line):
     line = re.sub("[\\[(](.*?)[\\])]", "", line)
 
     # Strip blanks hyphens and line breaks
-    line = line.strip(" -\n")
+    line = line.strip(" -\r\n")
 
     return line
 
