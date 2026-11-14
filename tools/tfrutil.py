@@ -46,7 +46,8 @@ def _size(path):
 
 
 @_cli.command(name="sample")
-@click.argument("sample_size", type=int, required=True, nargs=1)
+@click.argument("sample_size", type=click.IntRange(min=0),
+                required=True, nargs=1)
 @click.argument("file_patterns", type=str, required=True, nargs=-1)
 @click.argument("out", type=str, required=True, nargs=1)
 def _sample(sample_size, file_patterns, out):
@@ -60,6 +61,8 @@ def _sample(sample_size, file_patterns, out):
     # the files in a random order.
     buffer_size = int(2 * sample_size)
     examples = []
+    if sample_size == 0:
+        file_paths = []
     for file_name in file_paths:
         for example in tf.python_io.tf_record_iterator(file_name):
             examples.append(example)
