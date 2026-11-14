@@ -261,7 +261,8 @@ def run(argv=None):
             >> write_sink(
                 os.path.join(args.output_dir, name),
                 file_name_suffix=file_name_suffix,
-                num_shards=args.num_shards_train,
+                num_shards=(args.num_shards_train if name == "train"
+                            else args.num_shards_test),
             )
         )
 
