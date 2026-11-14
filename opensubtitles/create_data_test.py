@@ -55,7 +55,7 @@ class CreateDataPipelineTest(unittest.TestCase):
             "--sentence_files={}/*.txt".format(self._temp_dir),
             "--output_dir=" + self._temp_dir,
             "--dataset_format=TF",
-            "--num_shards_test=2",
+            "--num_shards_test=3",
             "--num_shards_train=2",
             "--min_length=4",
             "--max_length=5",
@@ -70,8 +70,9 @@ class CreateDataPipelineTest(unittest.TestCase):
         )
         self.assertItemsEqual(
             [path.join(self._temp_dir, expected_file) for expected_file in
-             ["test-00000-of-00002.tfrecord",
-              "test-00001-of-00002.tfrecord"]],
+             ["test-00000-of-00003.tfrecord",
+              "test-00001-of-00003.tfrecord",
+              "test-00002-of-00003.tfrecord"]],
             glob(path.join(self._temp_dir, "test-*"))
         )
 
@@ -134,7 +135,7 @@ class CreateDataPipelineTest(unittest.TestCase):
             "--sentence_files={}/*.txt".format(self._temp_dir),
             "--output_dir=" + self._temp_dir,
             "--dataset_format=JSON",
-            "--num_shards_test=2",
+            "--num_shards_test=3",
             "--num_shards_train=2",
             "--min_length=4",
             "--max_length=5",
@@ -149,8 +150,9 @@ class CreateDataPipelineTest(unittest.TestCase):
         )
         self.assertItemsEqual(
             [path.join(self._temp_dir, expected_file) for expected_file in
-             ["test-00000-of-00002.json",
-              "test-00001-of-00002.json"]],
+             ["test-00000-of-00003.json",
+              "test-00001-of-00003.json",
+              "test-00002-of-00003.json"]],
             glob(path.join(self._temp_dir, "test-*"))
         )
 
