@@ -37,6 +37,14 @@ def _parse_args(argv=None):
                 "Value must be positive, {} was passed.".format(value))
         return value
 
+    def _non_negative_int(value):
+        """Define a non-negative integer ArgumentParser type."""
+        value = int(value)
+        if value < 0:
+            raise argparse.ArgumentTypeError(
+                "Value must be non-negative, {} was passed.".format(value))
+        return value
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--sentence_files",
@@ -45,7 +53,7 @@ def _parse_args(argv=None):
              "one sentence per line.")
     parser.add_argument(
         "--num_extra_contexts",
-        default=10,
+        default=10, type=_non_negative_int,
         help="The maximum number of extra contexts in an example.")
     parser.add_argument(
         "--min_length",

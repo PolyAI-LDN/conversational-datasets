@@ -59,6 +59,7 @@ class CreateDataPipelineTest(unittest.TestCase):
             "--num_shards_train=2",
             "--min_length=4",
             "--max_length=5",
+            "--num_extra_contexts=2",
             "--train_split=0.5",
         ])
 
@@ -138,6 +139,7 @@ class CreateDataPipelineTest(unittest.TestCase):
             "--num_shards_train=2",
             "--min_length=4",
             "--max_length=5",
+            "--num_extra_contexts=2",
             "--train_split=0.5",
         ])
 
