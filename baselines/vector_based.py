@@ -472,7 +472,7 @@ class VectorMappingMethod(method.BaselineMethod):
             self._session.run(self._dev_iterator.initializer)
             while True:
                 try:
-                    accuracy, _ = self._session.run(self._accuracy)
+                    accuracy = self._session.run(self._accuracy[1])
                 except tf.errors.OutOfRangeError:
                     return accuracy
 
